@@ -1,3 +1,7 @@
 scripts/*.png
 model/build
 model/test
+.venv
+model_module/*.o
+model_module/*.so
+model_module/*.c

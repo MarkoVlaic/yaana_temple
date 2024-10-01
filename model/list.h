@@ -22,3 +22,5 @@
 
 #define LIST_FOREACH(var, headp, field) \
   for((var) = (headp)->first; (var); (var) = (var)->field.list_next)
+
+#define LIST_SIZE(headp) (headp)->cnt

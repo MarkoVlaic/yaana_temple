@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "model.h"
 #include "list.h"
@@ -26,15 +27,6 @@ char map[20][20] = {
   "O.......O..O.......O",
   "O....O........O....O",
   "OOOOOOOOOOOOOOOOOOOO"
-};
-
-struct wall {
-  float x;
-  float y;
-  float w;
-  float h;
-
-  LIST_ENTRY(wall) next_wall;
 };
 
 static LIST_HEAD(wall_list, wall) walls = LIST_HEAD_INIT();
@@ -116,10 +108,17 @@ void model_init() {
       }
     }
   }
+}
 
-  printf("walls loaded:\n");
-  struct wall *wl;
-  LIST_FOREACH(wl, &walls, next_wall) {
-    printf("x = %f | y = %f | w = %f | h = %f\n", wl->x, wl->y, wl->w, wl->h);
+void get_walls(struct wall **wa, uint32_t *cnt) {
+  uint32_t size = LIST_SIZE(&(walls));
+  *cnt = size;
+  *wa = malloc(sizeof(struct wall) * size);
+  struct wall *w;
+  int i = 0;
+  
+  LIST_FOREACH(w, &walls, next_wall) {
+    memcpy(&((*wa)[i]), w, sizeof(struct wall));
+    i++;
   }
 }
