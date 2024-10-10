@@ -559,6 +559,18 @@ cmc24_solution = [
     13.8 11.5 -0.54;
 ]
 
+# cmc24_solution = [
+#     5 5 0;
+#     1 1 0;
+#     11.9 16.5 0.95;
+#     15.2 17.6 2.45;
+#     13.8 12.0 0.92;
+#     1.6 6.2 2.53;
+#     2.2 14.7 0.66;
+#     18 12 1.6;
+#     13.8 11.5 -0.54;
+# ]
+
 # load the temple
 temple = load_temple(temple_string, block_size)
 

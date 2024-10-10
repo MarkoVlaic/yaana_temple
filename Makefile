@@ -13,7 +13,12 @@ run-explorer: export PYTHONPATH=.:model_module
 run-explorer:
 	python ./explorer/main.py
 
+run-test:
+	make -C model run-test
+
 .PHONY: clean
 clean:
 	make -C model clean
 	make -C model_module clean
+
+	-rm -f scripts/cmc24_solution_*
