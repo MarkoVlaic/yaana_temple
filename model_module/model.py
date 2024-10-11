@@ -31,24 +31,16 @@ def score_solution(objs):
     mirror_objs[i].pos.y = mirror_tuple[1]
     mirror_objs[i].angle = mirror_tuple[2]
 
-  path_p = ffi.new('struct vec **')
-  size_p = ffi.new('uint32_t *')
-  mirror_results = ffi.new('struct mirror[8]')
-  score_points_p = ffi.new('struct vec **')
-  score_points_len_p = ffi.new('uint32_t *')
+  arg = ffi.new('struct score_arg *')
 
-  score = lib.score_solution(light_obj[0], mirror_objs, path_p, size_p, mirror_results, score_points_p, score_points_len_p)
+  score = lib.score_solution(light_obj[0], mirror_objs, arg)
 
-  size = size_p[0]
-  path_a = path_p[0]
   path = []
-  for i in range(size):
-    path.append(path_a[i])
+  for i in range(arg.path_len):
+    path.append(arg.path[i])
 
-  score_points_len = score_points_len_p[0]
-  score_points_a = score_points_p[0]
-  score_points = []
-  for i in range(score_points_len):
-    score_points.append(score_points_a[i])
+  score_rects = []
+  for i in range(arg.score_rects_len):
+    score_rects.append(arg.score_rects[i])
 
-  return (score, path, mirror_results, score_points)
+  return (score, path, arg.mirrors, score_rects)

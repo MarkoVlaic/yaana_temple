@@ -53,14 +53,11 @@ int main() {
     .angle = -0.54
   };
 
-  struct vec *path, *score_points;
-  uint32_t path_len, score_points_len;
+  struct score_arg arg;
 
-  struct mirror mirror_results[8];
-
-  float score = score_solution(light, mirrors, &path, &path_len, mirror_results, &score_points, &score_points_len);
+  float score = score_solution(light, mirrors, &arg);
   printf("score: %f\n", score);
-  for(int i=0;i<path_len-1;i++) {
-    printf("(%f, %f) - (%f, %f)\n", path[i].x, path[i].y, path[i+1].x, path[i+1].y);
+  for(uint32_t i=0;i<arg.path_len-1;i++) {
+    printf("(%f, %f) - (%f, %f)\n", arg.path[i].x, arg.path[i].y, arg.path[i+1].x, arg.path[i+1].y);
   }
 }
