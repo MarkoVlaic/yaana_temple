@@ -17,6 +17,7 @@ EXTERNC void polygon_free(polygon_t rect_vec);
 EXTERNC void polygon_add_point(polygon_t rect, struct vec point);
 EXTERNC polygon_t polygon_union_rect(polygon_t polygon, polygon_t rect);
 EXTERNC polygon_t polygon_clip_walls(polygon_t polygon);
+EXTERNC float polygon_area(polygon_t polygon);
 EXTERNC void polygon_to_points(polygon_t polygon, struct vec **points, uint32_t *cnt);
 
 #endif

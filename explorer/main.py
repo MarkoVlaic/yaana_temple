@@ -49,16 +49,29 @@ class Layer:
     self.draw_fn = draw_fn
     self.enabled = BooleanVar(value=enabled)
 
+
+# solution = [
+#   (5,5,0.26),
+#   (11.5,6.5,0.9),
+#   (11.9,16.5,0.95),
+#   (15.2,17.6,2.45),
+#   (13.8,12.0,0.92),
+#   (1.6,6.2,2.53),
+#   (2.2,14.7,0.66),
+#   (18,12,1.6),
+#   (13.8,11.5,-0.54)
+# ]
+
 solution = [
-  (5,5,0.26),
-  (11.5,6.5,0.9),
-  (11.9,16.5,0.95),
-  (15.2,17.6,2.45),
-  (13.8,12.0,0.92),
-  (1.6,6.2,2.53),
-  (2.2,14.7,0.66),
-  (18,12,1.6),
-  (13.8,11.5,-0.54)
+  (5, 5, 0.26),
+  (11.5, 6.5, 0.9),
+  (11.9, 16.5, 0.95),
+  (15.2, 17.6, 2.45),
+  (13.8, 12.0, 0.92),
+  (1.6, 6.2, 2.53),
+  (2.2, 14.7, 0.7),
+  (8.5, 14.2, 2.325),
+  (8.7, 3.05, 2.525)
 ]
 
 # solution = [
@@ -204,10 +217,8 @@ if __name__ == '__main__':
   model_init()
   (walls, size) = get_walls()
   score_result = score_solution(solution)
-  print(f'got mirrors:')
+  print(f'got score: {score_result.get_score()}')
   mirrors = score_result.get_mirrors()
-  for i in range(8):
-    print(f'({mirrors[i].start.x}, {mirrors[i].start.y}) - ({mirrors[i].end.x}, {mirrors[i].end.y})')
 
   state = State()
   state.set_walls(walls)

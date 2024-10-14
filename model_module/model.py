@@ -2,7 +2,11 @@ from _model import lib, ffi
 
 class ScoreResult:
   def __init__(self, score, arg):
+    self.score = score
     self.arg = arg
+
+    if self.arg == ffi.NULL:
+      return
 
     self.path = []
     for i in range(arg.path_len):
@@ -15,6 +19,9 @@ class ScoreResult:
     self.clipped_polygon = []
     for i in range(arg.clipped_polygon_size):
       self.clipped_polygon.append(arg.clipped_polygon[i])
+
+  def get_score(self):
+    return self.score
 
   def get_mirrors(self):
     return self.arg.mirrors
@@ -48,7 +55,7 @@ def get_walls():
     walls.append(wall_a[i])
   return (walls, size)
 
-def score_solution(objs):
+def score_solution(objs, collect_arg=True):
   light_tuple = objs[0]
   light_obj = ffi.new('struct object *')
   light_obj.pos.x = light_tuple[0]
@@ -63,6 +70,9 @@ def score_solution(objs):
     mirror_objs[i].angle = mirror_tuple[2]
 
   arg = ffi.new('struct score_arg *')
+  if not collect_arg:
+    arg = ffi.NULL
+
 
   score = lib.score_solution(light_obj[0], mirror_objs, arg)
   return ScoreResult(score, arg)

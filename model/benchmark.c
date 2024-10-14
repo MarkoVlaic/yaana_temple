@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define ITERATIONS 1e4
+
 #include "model.h"
 
 int main() {
@@ -53,13 +55,8 @@ int main() {
     .angle = -0.54
   };
 
-  // struct score_arg arg;
+  for(int i=0;i<ITERATIONS;i++) {
+    score_solution(light, mirrors, NULL);
+  }
 
-  float score = score_solution(light, mirrors, NULL);
-  printf("score: %f\n", score);
-  // for(uint32_t i=0;i<arg.clipped_polygon_size;i++) {
-  //   printf("(%f, %f)\n", arg.clipped_polygon[i].x, arg.clipped_polygon[i].y);
-  // }
-
-  //score_arg_free(&arg);
 }

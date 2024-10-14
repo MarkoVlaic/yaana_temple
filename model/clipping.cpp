@@ -36,7 +36,7 @@ extern "C" polygon_t polygon_union_rect(polygon_t polygon, polygon_t rect) {
   if(polygon == NULL) {
     contourklip::Contour *result = new contourklip::Contour;
     for(auto point = rect_contour->begin();point < rect_contour->end();point++) {
-      std::cout << "Copy point " << *point << std::endl;
+      // std::cout << "Copy point " << *point << std::endl;
       result->push_back(*point);
     }
     return result;
@@ -48,7 +48,7 @@ extern "C" polygon_t polygon_union_rect(polygon_t polygon, polygon_t rect) {
   std::vector<contourklip::Contour> result;
 
   if(contourklip::clip(shape1, shape2, result, contourklip::UNION)) {
-    std::cout << "union success with size: " << result.size() << std::endl;
+    //std::cout << "union success with size: " << result.size() << std::endl;
     *((contourklip::Contour *)polygon) = result[0];
   } else {
     std::cout << "union failed" << std::endl;
@@ -65,9 +65,10 @@ extern "C" polygon_t polygon_clip_walls(polygon_t polygon) {
     std::vector<contourklip::Contour> result;
     
     if(contourklip::clip(shape1, shape2, result, contourklip::DIFFERENCE)) {
-      std::cout << "wall clip success with size: " << result.size() << std::endl;
+      //std::cout << "wall clip success with size: " << result.size() << std::endl;
       shape1.pop_back();
-      shape1.push_back(result[0]);
+      auto next = result[0];
+      shape1.push_back(next);
     } else {
       std::cout << "wall clip failed" << std::endl;
     }
@@ -79,13 +80,25 @@ extern "C" polygon_t polygon_clip_walls(polygon_t polygon) {
   return polygon;
 }
 
+// get polygon area with the shoelace formula
+extern "C" float polygon_area(polygon_t polygon) {
+  float area = 0;
+  contourklip::Contour *polygon_contour = (contourklip::Contour *) polygon;
+  for(int i=0;i<polygon_contour->size() - 1;i++) {
+    auto first = (*polygon_contour)[i];
+    auto second = (*polygon_contour)[i + 1];
+    area += (first.point().y() + second.point().y()) * (first.point().x() - second.point().x());
+  }
+  return 0.5 * area;
+}
+
 void polygon_to_points(polygon_t polygon, struct vec **points, uint32_t *cnt) {
   contourklip::Contour *polygon_contour = (contourklip::Contour *) polygon;
   *cnt = polygon_contour->size();
   *points = (struct vec *) malloc(sizeof(struct vec) * polygon_contour->size());
   int i = 0;
   for(auto point = polygon_contour->begin(); point < polygon_contour->end(); point++) {
-    (*points)[i] = (struct vec) { point->point().x(), point->point().y() };
+    (*points)[i] = (struct vec) { (float) point->point().x(), (float) point->point().y() };
     i++;
   }
 }
