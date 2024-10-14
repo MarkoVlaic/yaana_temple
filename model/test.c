@@ -8,7 +8,7 @@ int main() {
 
   struct object light = {
     .pos = { 5, 5 },
-    .angle = 0
+    .angle = 0.26
   };
 
   struct object mirrors[8];

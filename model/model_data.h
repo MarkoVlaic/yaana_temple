@@ -31,6 +31,8 @@ struct score_arg {
   struct mirror mirrors[8];
   struct vec *score_rects;
   uint32_t score_rects_len;
+  struct vec *clipped_polygon;
+  uint32_t clipped_polygon_size;
 };
 
 #endif

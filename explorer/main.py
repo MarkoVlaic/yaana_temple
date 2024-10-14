@@ -37,6 +37,12 @@ class State:
   def get_score_rects(self):
     return self.score_rects
 
+  def set_clipped_polygon(self, cp):
+    self.clipped_polygon = cp
+
+  def get_clipped_polygon(self):
+    return self.clipped_polygon
+
 class Layer:
   def __init__(self, name, draw_fn, enabled=True):
     self.name = name
@@ -157,7 +163,6 @@ def draw_score_rects(state, canvas):
   
   for i in range(0, len(score_rects), 4):
     points = score_rects[i:i+4]
-    points[2], points[3] = points[3], points[2]
     canv_points = []
     for point in points:
       canv_points.append(x_to_canvas(point.x))
@@ -165,13 +170,25 @@ def draw_score_rects(state, canvas):
     print(len(canv_points))
     canvas.create_polygon(canv_points, fill='red')
 
+def draw_clipped_polygon(state, canvas):
+  clipped_polygon = state.get_clipped_polygon()
+  canv_points = []
+  for i in range(len(clipped_polygon)):
+    point = clipped_polygon[i]
+    canv_points.append(x_to_canvas(point.x))
+    canv_points.append(y_to_canvas(point.y))
+    canvas.create_circle(x_to_canvas(point.x), y_to_canvas(point.y), 3, fill='orange')
+
+  canvas.create_polygon(canv_points, fill='orange')
+
 def create_layers():
   layers = [
     Layer('walls', draw_walls),
     Layer('light', draw_light),
     Layer('mirrors', draw_mirrors),
     Layer('path', draw_path),
-    Layer('score rects', draw_score_rects)
+    Layer('score rects', draw_score_rects),
+    Layer('clipped polygon', draw_clipped_polygon, False)
   ]
 
   return layers
@@ -198,6 +215,7 @@ if __name__ == '__main__':
   state.set_path(score_result.get_path())
   state.set_mirrors(score_result.get_mirrors())
   state.set_score_rects(score_result.get_score_rects())
+  state.set_clipped_polygon(score_result.get_clipped_polygon())
 
   top = Tk()
   canvas = Canvas(top, bg='white', height=CANV_W, width=CANV_H)

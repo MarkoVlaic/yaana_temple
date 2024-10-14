@@ -12,6 +12,10 @@ class ScoreResult:
     for i in range(arg.score_rects_len):
       self.score_rects.append(arg.score_rects[i])
 
+    self.clipped_polygon = []
+    for i in range(arg.clipped_polygon_size):
+      self.clipped_polygon.append(arg.clipped_polygon[i])
+
   def get_mirrors(self):
     return self.arg.mirrors
 
@@ -20,6 +24,9 @@ class ScoreResult:
 
   def get_score_rects(self):
     return self.score_rects
+
+  def get_clipped_polygon(self):
+    return self.clipped_polygon
 
   def free(self):
     ffi.score_arg_free(self.arg)
