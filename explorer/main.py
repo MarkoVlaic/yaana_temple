@@ -3,6 +3,46 @@ from tkinter import ttk
 
 from model_module.model import *
 
+class State:
+  def __init__(self):
+    self.walls = []
+
+  def set_walls(self, walls):
+    self.walls = walls
+
+  def get_walls(self):
+    return self.walls
+
+  def set_light(self, light):
+    self.light = light
+
+  def get_light(self):
+    return self.light
+
+  def set_mirrors(self, mirrors):
+    self.mirrors = mirrors
+
+  def get_mirrors(self):
+    return self.mirrors
+
+  def set_path(self, path):
+    self.path = path
+  
+  def get_path(self):
+    return self.path
+
+  def set_score_rects(self, sr):
+    self.score_rects = sr
+
+  def get_score_rects(self):
+    return self.score_rects
+
+class Layer:
+  def __init__(self, name, draw_fn, enabled=True):
+    self.name = name
+    self.draw_fn = draw_fn
+    self.enabled = BooleanVar(value=enabled)
+
 solution = [
   (5,5,0.26),
   (11.5,6.5,0.9),
@@ -48,13 +88,8 @@ def h_to_canvas(map_h):
 def w_to_canvas(map_w):
   return x_to_canvas(map_w)
 
-if __name__ == '__main__':
-  model_init()
-  (walls, size) = get_walls()
-  
-  top = Tk()
-  canvas = Canvas(top, bg='white', height=CANV_W, width=CANV_H)
-
+def draw_walls(state, canvas):
+  walls = state.get_walls()
   for wall in walls:
     cx = x_to_canvas(wall.pos.x)
     cy = y_to_canvas(wall.pos.y)
@@ -76,13 +111,14 @@ if __name__ == '__main__':
 
       canvas.create_line(sx, sy, ex, ey, fill='red')
 
-  (score, path, mirrors, score_points) = score_solution(solution)
-  print(score)
-  print(path)
-
-  light_x = solution[0][0]
-  light_y = solution[0][1]
+def draw_light(state, canvas):
+  light = state.get_light()
+  light_x = light[0]
+  light_y = light[1]
   canvas.create_circle(x_to_canvas(light_x), y_to_canvas(light_y), 5, fill='red')
+
+def draw_mirrors(state, canvas):
+  mirrors = state.get_mirrors()
 
   for i in range(8):
     mirror = mirrors[i]
@@ -91,8 +127,14 @@ if __name__ == '__main__':
     ex = x_to_canvas(mirror.end.x)
     ey = y_to_canvas(mirror.end.y)
 
+    print('draw mirror')
+    print(f'map ({mirrors[i].start.x}, {mirrors[i].start.y}) - ({mirrors[i].end.x}, {mirrors[i].end.y})')
+    print(f'canvas ({sx}, {sy}) - ({ex}, {ey})')
+
     canvas.create_line(sx, sy, ex, ey, fill='red')
 
+def draw_path(state, canvas):
+  path = state.get_path()
   for i in range(len(path) - 1):
     start = path[i]
     end = path[i+1]
@@ -107,12 +149,14 @@ if __name__ == '__main__':
 
     canvas.create_line(sx, sy, ex, ey, fill='blue')
 
-  for i in range(len(score_points)):
-    point = score_points[i]
+def draw_score_rects(state, canvas):
+  score_rects = state.get_score_rects()
+  for i in range(len(score_rects)):
+    point = score_rects[i]
     canvas.create_circle(x_to_canvas(point.x), y_to_canvas(point.y), 2, fill='red')
   
-  for i in range(0, len(score_points), 4):
-    points = score_points[i:i+4]
+  for i in range(0, len(score_rects), 4):
+    points = score_rects[i:i+4]
     points[2], points[3] = points[3], points[2]
     canv_points = []
     for point in points:
@@ -121,5 +165,53 @@ if __name__ == '__main__':
     print(len(canv_points))
     canvas.create_polygon(canv_points, fill='red')
 
+def create_layers():
+  layers = [
+    Layer('walls', draw_walls),
+    Layer('light', draw_light),
+    Layer('mirrors', draw_mirrors),
+    Layer('path', draw_path),
+    Layer('score rects', draw_score_rects)
+  ]
+
+  return layers
+
+def draw_layers(layers, state, canvas):
+  canvas.create_rectangle(0, 0 , CANV_W, CANV_H, fill='white')
+  for layer in layers:
+    print(f'layer {layer.name} enabled {layer.enabled}')
+    if layer.enabled.get():
+      layer.draw_fn(state, canvas)
+
+if __name__ == '__main__':
+  model_init()
+  (walls, size) = get_walls()
+  score_result = score_solution(solution)
+  print(f'got mirrors:')
+  mirrors = score_result.get_mirrors()
+  for i in range(8):
+    print(f'({mirrors[i].start.x}, {mirrors[i].start.y}) - ({mirrors[i].end.x}, {mirrors[i].end.y})')
+
+  state = State()
+  state.set_walls(walls)
+  state.set_light(solution[0])
+  state.set_path(score_result.get_path())
+  state.set_mirrors(score_result.get_mirrors())
+  state.set_score_rects(score_result.get_score_rects())
+
+  top = Tk()
+  canvas = Canvas(top, bg='white', height=CANV_W, width=CANV_H)
   canvas.pack()
+
+  layers = create_layers()
+  layer_toggles_frame = ttk.Frame(top)
+
+  layer_toggles_frame.pack()
+
+  for (i, layer) in enumerate(layers):
+    toggle = ttk.Checkbutton(layer_toggles_frame, text=layer.name, variable=layer.enabled, onvalue=True, offvalue=False, command=lambda: draw_layers(layers, state, canvas))
+    toggle.grid(row=0, column=i)
+
+  draw_layers(layers, state, canvas)
+
   top.mainloop()

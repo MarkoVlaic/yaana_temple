@@ -1,5 +1,29 @@
 from _model import lib, ffi
 
+class ScoreResult:
+  def __init__(self, score, arg):
+    self.arg = arg
+
+    self.path = []
+    for i in range(arg.path_len):
+      self.path.append(arg.path[i])
+
+    self.score_rects = []
+    for i in range(arg.score_rects_len):
+      self.score_rects.append(arg.score_rects[i])
+
+  def get_mirrors(self):
+    return self.arg.mirrors
+
+  def get_path(self):
+    return self.path
+
+  def get_score_rects(self):
+    return self.score_rects
+
+  def free(self):
+    ffi.score_arg_free(self.arg)
+
 def model_init():
   lib.model_init()
 
@@ -34,13 +58,4 @@ def score_solution(objs):
   arg = ffi.new('struct score_arg *')
 
   score = lib.score_solution(light_obj[0], mirror_objs, arg)
-
-  path = []
-  for i in range(arg.path_len):
-    path.append(arg.path[i])
-
-  score_rects = []
-  for i in range(arg.score_rects_len):
-    score_rects.append(arg.score_rects[i])
-
-  return (score, path, arg.mirrors, score_rects)
+  return ScoreResult(score, arg)

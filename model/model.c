@@ -348,16 +348,29 @@ static void raytrace (struct object light_obj, struct score_arg *arg) {
   }
 }
 
-float score_solution (struct object light, struct object mirror_objs[8], struct score_arg *arg) {
+float score_solution(struct object light, struct object mirror_objs[8], struct score_arg *arg) {
   //*arg = malloc(sizeof(struct score_arg));
+  struct mirror mirrors[8];
 
-  preprocess_mirrors(mirror_objs, arg->mirrors);
+  preprocess_mirrors(mirror_objs, mirrors);
+  
+  if(arg != NULL) {
+    //arg->mirrors = malloc(sizeof(struct mirror) * 8);
+    for(int i=0;i<8;i++) {
+      arg->mirrors[i] = mirrors[i];
+    }
+  }
 
-  if(!solution_valid(light, arg->mirrors)) {
+  if(!solution_valid(light, mirrors)) {
     return -1;
   }
 
   raytrace(light, arg);
 
   return 0;
+}
+
+void score_arg_free(struct score_arg *arg) {
+  free(arg->path);
+  free(arg->score_rects);
 }
