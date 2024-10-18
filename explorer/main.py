@@ -228,7 +228,7 @@ def draw_layers(layers, state, canvas):
 if __name__ == '__main__':
   model_init()
   (walls, size) = get_walls()
-  score_result = score_solution(solution)
+  score_result = evaluate_solution(solution)
   print(f'got score: {score_result.get_score()}')
   mirrors = score_result.get_mirrors()
 

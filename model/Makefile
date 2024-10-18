@@ -48,7 +48,7 @@ fuzzer: $(BUILD_DIR) $(LIB_MODEL_OBJECTS) libmodel.so $(BUILD_DIR)/exe/fuzzer.o 
 	$(CC) $(BUILD_DIR)/exe/fuzzer.o -L$(shell pwd) $(LDFLAGS) -o fuzzer
 
 libmodel.so: $(LIB_MODEL_OBJECTS) $(BUILD_DIR)/lib_clipping/libclipping.o $(HEADERS)
-	$(CC) -lstdc++ -shared $^ -o $@
+	g++ -lstdc++ -shared $^ -o $@
 	$(CC) -E model.h > $(BUILD_DIR)/lib_model/model.h.preprocessed
 
 $(BUILD_DIR):

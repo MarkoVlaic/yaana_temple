@@ -36,7 +36,8 @@ class ScoreResult:
     return self.clipped_polygon
 
   def free(self):
-    ffi.score_arg_free(self.arg)
+    pass
+    #ffi.score_arg_free(self.arg)
 
 def model_init():
   lib.model_init()
@@ -55,7 +56,7 @@ def get_walls():
     walls.append(wall_a[i])
   return (walls, size)
 
-def score_solution(objs, collect_arg=True):
+def evaluate_solution(objs, collect_arg=True):
   light_tuple = objs[0]
   light_obj = ffi.new('struct object *')
   light_obj.pos.x = light_tuple[0]
@@ -76,3 +77,7 @@ def score_solution(objs, collect_arg=True):
 
   score = lib.score_solution(light_obj[0], mirror_objs, arg)
   return ScoreResult(score, arg)
+
+def score_solution(objs):
+  result = evaluate_solution(objs, False)
+  return result.get_score()
