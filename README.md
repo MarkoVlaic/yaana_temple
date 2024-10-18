@@ -1,1 +1,0 @@
-# yaana_temple
