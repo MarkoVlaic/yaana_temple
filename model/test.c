@@ -7,51 +7,44 @@ int main() {
   model_init();
 
   struct object light = {
-    .pos = { 5, 5 },
-    .angle = 0.26
+    .pos = { 16.5442638, 3.82861733},
+    .angle = 4.37968731
   };
 
   struct object mirrors[8];
 
   mirrors[0] = (struct object) {
-    .pos = { 11.5, 6.5 },
-    .angle = 0.9
-  };
-  
-  mirrors[1] = (struct object) {
-    .pos = { 11.9, 16.5 },
-    .angle = 0.95
-  };
-
-  mirrors[2] = (struct object) {
-    .pos = { 15.2, 17.6 },
-    .angle = 2.45
-  };
-
-  mirrors[3] = (struct object) {
-    .pos = { 13.8, 12.0 },
-    .angle = 0.92
-  };
-
-  mirrors[4] = (struct object) {
-    .pos = { 1.6, 6.2 },
-    .angle = 2.53
-  };
-
-  mirrors[5] = (struct object) {
-    .pos = { 2.2, 14.7 },
-    .angle = 0.66
-  };
-
-  mirrors[6] = (struct object) {
-    .pos = { 18, 12 },
-    .angle = 1.6
-  };
-
-  mirrors[7] = (struct object) {
-    .pos = { 13.8, 11.5 },
-    .angle = -0.54
-  };
+            .pos = { 11.6856909, 6.5166831 },
+            .angle = 1.66598213
+         };
+mirrors[1] = (struct object) {
+            .pos = { 3.43560505, 10.2965584 },
+            .angle = 0.871678054
+         };
+mirrors[2] = (struct object) {
+            .pos = { 9.70941448, 12.3708687 },
+            .angle = 3.75155759
+         };
+mirrors[3] = (struct object) {
+            .pos = { 4.07741928, 11.7029171 },
+            .angle = 1.66413093
+         };
+mirrors[4] = (struct object) {
+            .pos = { 15.9491453, 14.3437719 },
+            .angle = 2.82717705
+         };
+mirrors[5] = (struct object) {
+            .pos = { 11.0879555, 12.4287834 },
+            .angle = 5.95866919
+         };
+mirrors[6] = (struct object) {
+            .pos = { 2.29543543, 6.57751131 },
+            .angle = 5.07053852
+         };
+mirrors[7] = (struct object) {
+            .pos = { 6.62103939, 12.3743782 },
+            .angle = 1.85373354
+         };
 
   // struct score_arg arg;
 

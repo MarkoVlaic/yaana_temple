@@ -9,7 +9,7 @@ def random_tuple():
 
   return (a, b, c)
 
-iters = int(1e6)
+iters = int(1e8)
 
 model_init()
 

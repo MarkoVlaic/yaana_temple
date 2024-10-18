@@ -571,17 +571,6 @@ end
 #     8.7 3.05 2.525;
 # ]
 
-cmc24_solution = [
-    1.66978693 16.412447 4.6072216;
-    7.3594861 13.2850847 3.60591984;
-    18.881649 9.0175705 3.07476401;
-    17.0191193 7.54606152 5.65701962;
-    13.5028067 5.19993353 2.11855602;
-    16.0906181 9.76971722 3.60259509;
-    7.94037104 1.80108428 3.95664954;
-    16.6918297 13.8176193 2.07088709;
-    1.53411436 2.06901383 1.61120379;
-]
 
 # cmc24_solution = [
 #     5 5 0;
@@ -598,18 +587,34 @@ cmc24_solution = [
 # load the temple
 temple = load_temple(temple_string, block_size)
 
-# load the solution
-lamp, mirrors = load_solution(cmc24_solution, mirror_length)
-check_solution(temple, lamp, mirrors)
+function parse_float(s)
+  return parse(Float64, s)
+end
 
-# compute the ray path
-path = raytrace(temple, lamp, mirrors)
+cmc24_solution = Vector{Float64}[]
+line_i = 0
+while line_i < 8
+  line = readline(stdin)
+  vals = split(line, ' ')
+  row = map(parse_float, vals)
+  #write(stdout, line)
+  #print(row)
+  push!(cmc24_solution, row)
+  global line_i = line_i+1
+end
+print(cmc24_solution)
+# # load the solution
+# lamp, mirrors = load_solution(cmc24_solution, mirror_length)
+# check_solution(temple, lamp, mirrors)
 
-# evaluate the solution
-total, vacant, score = evaluate(temple, path)
-println(stderr, "Base plot has $(commas(vacant)) vacant of total $(commas(total)) pixels.")
-println(stderr, "Your CMC24 score is $(commas(score)) / $(commas(vacant)) = $(100. * score / vacant) %.")
-print(score)
+# # compute the ray path
+# path = raytrace(temple, lamp, mirrors)
 
-# create the presentation plot
-cmc24_plot(temple, lamp=lamp, mirrors=mirrors, path=path)
+# # evaluate the solution
+# total, vacant, score = evaluate(temple, path)
+# println(stderr, "Base plot has $(commas(vacant)) vacant of total $(commas(total)) pixels.")
+# println(stderr, "Your CMC24 score is $(commas(score)) / $(commas(vacant)) = $(100. * score / vacant) %.")
+# print(score)
+
+# # create the presentation plot
+# cmc24_plot(temple, lamp=lamp, mirrors=mirrors, path=path)

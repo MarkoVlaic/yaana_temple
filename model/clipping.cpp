@@ -35,10 +35,11 @@ extern "C" polygon_t polygon_union_rect(polygon_t polygon, polygon_t rect) {
   rect_contour->close();
   if(polygon == NULL) {
     contourklip::Contour *result = new contourklip::Contour;
-    for(auto point = rect_contour->begin();point < rect_contour->end();point++) {
-      // std::cout << "Copy point " << *point << std::endl;
-      result->push_back(*point);
-    }
+    // for(auto point = rect_contour->begin();point < rect_contour->end();point++) {
+    //   // std::cout << "Copy point " << *point << std::endl;
+    //   result->push_back(*point);
+    // }
+    *result = *rect_contour;
     return result;
   }
 
@@ -65,17 +66,27 @@ extern "C" polygon_t polygon_clip_walls(polygon_t polygon) {
     std::vector<contourklip::Contour> result;
     
     if(contourklip::clip(shape1, shape2, result, contourklip::DIFFERENCE)) {
-      //std::cout << "wall clip success with size: " << result.size() << std::endl;
+      if(result.size() == 0) {
+        std::cout << "wall clip size 0";
+        continue;
+      }
+
       shape1.pop_back();
-      auto next = result[0];
+      size_t max_i=0;
+      for(size_t i=0;i<result.size();i++) {
+        if(result[i].size() > result[max_i].size()) {
+          max_i = i;
+        }
+      }
+      auto next = result[max_i];
       shape1.push_back(next);
+      // }
     } else {
       std::cout << "wall clip failed" << std::endl;
     }
 
     *((contourklip::Contour *)polygon) = shape1[0];
   }
-
 
   return polygon;
 }
@@ -84,7 +95,7 @@ extern "C" polygon_t polygon_clip_walls(polygon_t polygon) {
 extern "C" float polygon_area(polygon_t polygon) {
   float area = 0;
   contourklip::Contour *polygon_contour = (contourklip::Contour *) polygon;
-  for(int i=0;i<polygon_contour->size() - 1;i++) {
+  for(std::size_t i=0;i<polygon_contour->size() - 1;i++) {
     auto first = (*polygon_contour)[i];
     auto second = (*polygon_contour)[i + 1];
     area += (first.point().y() + second.point().y()) * (first.point().x() - second.point().x());

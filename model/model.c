@@ -209,7 +209,7 @@ static float map_ray_intersection(struct ray ray) {
 static bool point_in_wall(struct vec v) {
   struct wall *w;
   LIST_FOREACH(w, &walls, next_wall) {
-    if(v.x >= w->verts[0].x && v.y >= w->verts[0].y && v.x <= w->verts[2].x && v.y <= w->verts[2].y) {
+    if(v.x >= w->verts[0].x && v.y <= w->verts[0].y && v.x <= w->verts[2].x && v.y >= w->verts[2].y) {
       return true;
     }
   }

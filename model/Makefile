@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-MMD -Wall -Werror -g
+CFLAGS=-MMD -Wall -Werror -O3
 LDFLAGS = -lm -lmodel -lstdc++
 
 BUILD_DIR=build
@@ -36,7 +36,7 @@ run-benchmark:
 .PHONY: run-fuzzer
 run-fuzzer: export LD_LIBRARY_PATH = $(shell pwd)
 run-fuzzer:
-	gdb ./fuzzer
+	./fuzzer
 
 test: $(BUILD_DIR) $(LIB_MODEL_OBJECTS) libmodel.so $(BUILD_DIR)/exe/test.o $(HEADERS)
 	$(CC) $(BUILD_DIR)/exe/test.o -L$(shell pwd) $(LDFLAGS) -o test
@@ -58,7 +58,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)/exe
 
 $(BUILD_DIR)/lib_clipping/libclipping.o: $(LIB_CLIPPING_SRCS) contourklip.hpp clipping.h
-	g++ -c -fPIC $< -o $@
+	g++ $(CFLAGS) -c -fPIC $< -o $@
 
 $(BUILD_DIR)/lib_model/%.o: %.c
 	$(CC) $(CFLAGS) -fpic -c $< -o $@

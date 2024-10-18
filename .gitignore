@@ -1,6 +1,8 @@
 scripts/*.png
 model/build
 model/test
+model/benchmark
+model/fuzzer
 model/*.so
 .venv
 model_module/*.o
