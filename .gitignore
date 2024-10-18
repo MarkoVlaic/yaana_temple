@@ -8,5 +8,5 @@ model/*.so
 model_module/*.o
 model_module/*.so
 model_module/*.c
-model_module/__pycache__/
+*/__pycache__/
 .vscode
