@@ -32,14 +32,14 @@ class Bird:
         population.add(self.getPosition())
 
     def normalize(self):
-        self.x /= 20
-        self.y /= 20
-        self.alpha /= pi
+        self.position[0] /= 20
+        self.position[1] /= 20
+        self.position[2] /= pi
 
     def denormalize(self):
-        self.x *= 20
-        self.y *= 20
-        self.alpha *= pi
+        self.position[0] *= 20
+        self.position[1] *= 20
+        self.position[2] *= pi
 
     def checkPosition(self, epsilon): #provjerava da nisu sve tri vrijednosti objekta (x,y,alpha) zapele u epsilon okolinu (0,0,0) ili (1,1,1)
         res = 0
