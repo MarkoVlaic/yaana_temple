@@ -82,7 +82,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     for _ in range(num_particles):
         population = set()
         while(len(population) < 9):
-            bird = Bird(np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi), np.random.uniform(-0.1, 0.1, dimensions))
+            bird = Bird(np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi), np.random.uniform(-0.01, 0.01, dimensions))
             population.add(bird)
 
         population = list(population)
@@ -90,8 +90,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     
     
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
-    c1 = 0.5  # c1, c2 su faktori kojima se množe cognitive i social težine
-    c2 = 0.5 
+    c1 = 0.05  # c1, c2 su faktori kojima se množe cognitive i social težine
+    c2 = 0.05 
     gregarious_factor = 2.5*1e-4  #faktor kojim se množi gregarious težina 
     epsilon = 1e-3 # za definiciju epsilon okoline
 
@@ -107,14 +107,14 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 bird.normalize() #normaliziraj objekt
                 
                 #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
-                r1, r2 = np.random.uniform(0, 0.2), np.random.uniform(0, 0.2)
+                r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
                 cognitive_velocity = c1 * r1 * np.subtract(populations[cnt][cntt].best_position, bird.position)
                 social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
                 gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
                 
                 #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
                 if norm(bird.velocity, 2) < epsilon:
-                    bird.velocity = np.random.uniform(-0.03,0.03, dimensions) 
+                    bird.velocity = np.random.uniform(-0.01,0.01, dimensions) 
                     restart_velocity +=1
                 else:  
                     bird.velocity = (w * bird.velocity +
@@ -122,7 +122,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                                     social_velocity + 
                                     gregarious_velocity)
                 
-                np.clip(bird.velocity, -0.1, 0.1, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
+                np.clip(bird.velocity, -0.01, 0.01, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
                 '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
                 novi poziciju objekta'''
