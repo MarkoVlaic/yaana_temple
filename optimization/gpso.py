@@ -56,7 +56,7 @@ class Population():
 
 #best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(9)]
 global_best_position = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9)]
-#print(global_best_position)
+print(global_best_position)
 global_best_value = score_solution(global_best_position)
 print(global_best_value)
 start_time = time.time()
