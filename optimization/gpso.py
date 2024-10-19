@@ -55,17 +55,15 @@ class Population():
         self.best_value = value
 
 #best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(9)]
-global_best_value = 0
-global_best_position = np.array([0,0,0])
-
-
+global_best_position = np.array(np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9))
+global_best_value = score_solution(global_best_position)
 start_time = time.time()
 
 def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     global restart_velocity
     global restart_position
     # Initialize particles
-    best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(num_particles)]
+    best_values_per_population = [Population(np.array(np.array([0,0,0]) for _ in range(9)) , 0) for _ in range(num_particles)]
     populations = []
     for _ in range(num_particles):
         population = set()
@@ -198,6 +196,10 @@ num_particles = 2
 max_iterations = 100000
 best_position, best_value = gpso(num_particles, max_iterations)
 end_time = time.time()
+print("Best Position:", best_position)
+print("Best Value:", best_value)
+print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
+print(restart_position, restart_velocity)
 print("Best Position:", best_position)
 print("Best Value:", best_value)
 print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
