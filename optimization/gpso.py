@@ -87,7 +87,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     w = 1 
     c1 = 0.5  
     c2 = 0.5 
-    gregarious_factor = 0.25  
+    gregarious_factor = 0.025  
     v_max = 5
     v_min = 0
     epsilon = 1e-3
@@ -183,7 +183,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
             
             #print(particle.position)    
         # Update global best position
-        current_global_best = min(best_values_per_population, key=lambda p: p.best_value)
+        current_global_best = max(best_values_per_population, key=lambda p: p.best_value)
         if current_global_best.best_value > global_best_value:
             global_best_value = current_global_best.best_value
             global_best_position = current_global_best.best_position
