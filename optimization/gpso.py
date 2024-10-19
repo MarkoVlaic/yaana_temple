@@ -107,7 +107,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 bird.normalize() #normaliziraj objekt
                 
                 #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
-                r1, r2 = np.random.uniform(-1, 1)/2, np.random.uniform(-1, 1)/2
+                r1, r2 = np.random.uniform(0, 0.2), np.random.uniform(0, 0.2)
                 cognitive_velocity = c1 * r1 * np.subtract(populations[cnt][cntt].best_position, bird.position)
                 social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
                 gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
@@ -122,7 +122,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                                     social_velocity + 
                                     gregarious_velocity)
                 
-                bird.velocity = np.clip(bird.velocity, -0.1, 0.1) #ograniči velocity na interval (-0.1, 0.1)
+                np.clip(bird.velocity, -0.1, 0.1, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
                 '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
                 novi poziciju objekta'''
@@ -136,8 +136,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                     bird.setPosition(np.random.uniform(0, 1, dimensions))
                 
                 
-                tmp = np.clip(bird.position, 0, 1)#ograniči poziciju objekta na interval (0,1)
-                bird.setPosition(tmp)
+                np.clip(bird.position, 0, 1, out=bird.position)#ograniči poziciju objekta na interval (0,1)
+                #bird.setPosition(tmp)
                 
 
                 bird.denormalize() #denormaliziraj objekt
@@ -195,3 +195,4 @@ end_time = time.time()
 print("Best Position:", best_position)
 print("Best Value:", best_value)
 print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
+#print(restart_position, restart_velocity)
