@@ -4,6 +4,8 @@ from tqdm import *
 import numpy as np
 from numpy.linalg import norm
 import time
+from model_module import *
+from model import score_solution
 
 global restart_velocity
 global restart_position
@@ -26,7 +28,7 @@ class Bird:
         self.velocity = velocity
         self.best_position = np.array([x,y,alpha])
         self.position = np.array([self.x, self.y, self.alpha])
-        #self.best_value = f((x,y,alpha))
+        #self.best_value
         #self.global_best_position = np.array([x,y,alpha])
         #self.global_best_value = self.best_value
 
@@ -52,19 +54,23 @@ class Population():
         self.best_position = position
         self.best_value = value
 
-best_values_per_population = [Population(np.array([0,0,0]), 0) for _ in range(9)]
+#best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(9)]
 global_best_value = 0
 global_best_position = np.array([0,0,0])
 
-def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
+
+start_time = time.time()
+
+def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     global restart_velocity
     global restart_position
     # Initialize particles
+    best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(num_particles)]
     populations = []
     for _ in range(num_particles):
         population = set()
         while(len(population) < 9):
-            bird = Bird(np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi), np.random.uniform(-0.1, 0.1, 3))
+            bird = Bird(np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi), np.random.uniform(-0.1, 0.1, dimensions))
             #bird.addToPopulation()
             population.add(bird)
         population = list(population)
@@ -82,7 +88,7 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
     gregarious_factor = 0.25  
     v_max = 5
     v_min = 0
-    epsilon = 2
+    epsilon = 1e-3
     #gamma = 0
     gamma_min = 2
     gamma_max = 4
@@ -91,13 +97,16 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
     u = np.array([1,1,1])
     l = np.array([0,0,0])
 
-    for iteration in tqdm(range(max_iterations)):
+    it = 0
+
+    #for iteration in tqdm(range(max_iterations)):
+    while(time.time()-start_time < 3600*hours):
         cnt = 0
         for p in populations:
             for bird in p:
 
                 bird.normalize()
-                bird.position = np.array(bird.position)
+                #bird.position = np.array(bird.position)
                 #print(particle.velocity)
                 # Update particle velocity
                 #print(bird)
@@ -117,9 +126,9 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
                 #print(particle.velocity)
                 #print(norm((particle.position - global_best_position),2))
                 # or norm(particle.velocity, 2) < epsilon
-                if norm(bird.velocity, 2) < epsilon/100:
+                if norm(bird.velocity, 2) < epsilon:
                     #print(True)
-                    bird.velocity = np.random.uniform(-0.1,0.1, 3)
+                    bird.velocity = np.random.uniform(-0.03,0.03, dimensions)
                     restart_velocity +=1
                 else:
                     #particle.velocity = particle.gamma * random.random() * (particle.position -  global_best_position)
@@ -132,7 +141,7 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
 
                 #particle.velocity = min(v_max, particle.velocity)
                 #particle.velocity = max(v_min, particle.velocity)
-                bird.velocity = np.clip(bird.velocity, -0.3, 0.3)
+                bird.velocity = np.clip(bird.velocity, -0.1, 0.1)
 
                 #print(particle.position -  global_best_position)
                 #particle.velocity[:dimensions] = np.c
@@ -140,7 +149,7 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
                 # Update particle position
                 #print(norm((abs(particle.position) - [3,3,3]),2))
                 #print((particle.velocity))
-                if norm(np.subtract(abs(bird.position), l),2) > epsilon and norm(np.subtract(bird.position, global_best_position),2) > epsilon and norm(np.subtract(abs(bird.position), u),2) > epsilon:
+                if norm(np.subtract(abs(bird.position), l),2) > epsilon and norm(np.subtract(abs(bird.position), u),2) > epsilon:
                     bird.position += bird.velocity
 
                 else:
@@ -153,14 +162,14 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
                 # Evaluate new position
 
                 bird.denormalize()
-                bird.position = tuple(bird.position)
+                #bird.position = tuple(bird.position)
 
-            positions = list(map(lambda bird: bird.position, p))
-            current_value = f(positions)
+            positions = np.array(map(lambda bird: bird.position, p))
+            current_value = score_solution(positions)
             #print(current_value)
             if current_value > best_values_per_population[cnt].best_value:
                 best_values_per_population[cnt].best_value = current_value
-                best_values_per_population[cnt].best_position = bird.position
+                best_values_per_population[cnt].best_position = positions
         
             
             #print(particle.position)    
@@ -172,21 +181,22 @@ def gpso(num_particles, dimensions, max_iterations, checkpoint=1000):
         cnt +=1
 
         
-        if iteration%checkpoint == 0:
-            print(f"Iteration {iteration + 1}/{max_iterations}, Global Best Value: {global_best_value}")
+        if it%checkpoint == 0:
+            print(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}")
 
             file = open("checkpoints.txt", "a")
-            file.write(f"Iteration {iteration + 1}/{max_iterations}, Global Best Value: {global_best_value}, Global Best Position: {global_best_position}\n")
+            file.write(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}, Global Best Position: {global_best_position}\n")
             file.write("###############################################################")
             file.close()
+
+        it+=1
 
     return global_best_position, global_best_value
 
 num_particles = 2
-dimensions = 27
+#dimensions = 27
 max_iterations = 100000
-start_time = time.time()
-best_position, best_value = gpso(num_particles, dimensions, max_iterations)
+best_position, best_value = gpso(num_particles, max_iterations)
 end_time = time.time()
 print("Best Position:", best_position)
 print("Best Value:", best_value)
