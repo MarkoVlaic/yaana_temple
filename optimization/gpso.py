@@ -166,8 +166,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 #bird.position = tuple(bird.position)
                 cntt+=1
 
-            positions = [map(lambda bird: bird.position, p)]
-            print(positions)
+            positions = list(g.position for g in p)
+            #print(positions)
             current_value = score_solution(positions)
             #print(current_value)
             if current_value > best_values_per_population[cnt].best_value:
