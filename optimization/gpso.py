@@ -87,7 +87,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     w = 1 
     c1 = 0.5  
     c2 = 0.5 
-    gregarious_factor = 0.025  
+    gregarious_factor = 2.5*1e-4  
     v_max = 5
     v_min = 0
     epsilon = 1e-3
