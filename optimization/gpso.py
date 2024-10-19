@@ -114,8 +114,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 #print(bird.position)
                 r1, r2 = np.random.rand(1), np.random.rand(1)
                 cognitive_velocity = c1 * r1 * np.subtract(populations[cnt][cntt].best_position, bird.position)
-                social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
-                #gregarious_velocity = gregarious_factor * np.mean([p.position for p in particles], axis=0) - particle.position
+                #social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
+                gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
                 
                 '''particle.velocity = (w * particle.velocity +
                                     cognitive_velocity +
@@ -134,7 +134,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                     #particle.velocity = particle.gamma * random.random() * (particle.position -  global_best_position)
                     bird.velocity = (w * bird.velocity +
                                     cognitive_velocity +
-                                    social_velocity)
+                                    #social_velocity)
+                                    gregarious_velocity)
                 #print(particle.velocity)
                     
 
