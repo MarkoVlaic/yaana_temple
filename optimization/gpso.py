@@ -178,7 +178,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 best_values_per_population[cnt].best_position = positions
 
                 for i in range(9):
-                    populations[cnt][cntt].best_position = best_values_per_population[cnt].best_position[cntt]
+                    populations[cnt][i].best_position = best_values_per_population[cnt].best_position[i]
         
             
             #print(particle.position)    
