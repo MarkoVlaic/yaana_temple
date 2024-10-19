@@ -7,18 +7,8 @@ import time
 from model_module import *
 from model import score_solution
 
-global restart_velocity
-global restart_position
 restart_position  = 0
 restart_velocity = 0
-class Particle:
-    def __init__(self, position, velocity):
-        self.position = position
-        self.velocity = velocity
-        self.best_position = position
-        self.best_value = f(position)
-        self.global_best_position = position
-        self.global_best_value = self.best_value
 
 class Bird:
     def __init__(self, x, y, alpha, velocity):
@@ -28,12 +18,15 @@ class Bird:
         self.velocity = velocity
         self.best_position = np.array([x,y,alpha])
         self.position = np.array([self.x, self.y, self.alpha])
-        #self.best_value
-        #self.global_best_position = np.array([x,y,alpha])
-        #self.global_best_value = self.best_value
 
     def getPosition(self):
         return self.position
+    
+    def setPosition(self, position):
+        self.position = position
+
+    def setBestPosition(self, position):
+        self.best_position = position
     
     def addToPopulation(self):
         population.add(self.getPosition())
@@ -48,17 +41,33 @@ class Bird:
         self.y *= 20
         self.alpha *= pi
 
-class Population():
+    def checkPosition(self, epsilon): #provjerava da nisu sve tri vrijednosti objekta (x,y,alpha) zapele u epsilon okolinu (0,0,0) ili (1,1,1)
+        res = 0
+
+        x,y,alpha = self.position[0], self.position[1], self.position[2]
+
+        if(1-epsilon-x) > 0 and (x > epsilon):
+            res +=1
+        
+        if(1-epsilon-y) > 0 and (y > epsilon):
+            res +=1
+
+        if(1-epsilon-alpha) > 0 and (alpha > epsilon):
+            res +=1
+
+        return res > 1
+        
+        
+
+class Population(): #klasa u kojoj pratim najbolju poziciju i najbolju vrijednost za svaku populaciju, populacija = lampa + 8 ogledala
 
     def __init__(self, position, value):
         self.best_position = position
         self.best_value = value
 
-#best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(9)]
 global_best_position = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9)]
-print(global_best_position)
-global_best_value = score_solution(global_best_position)
-print(global_best_value)
+#global_best_value = random.random()
+global_best_value = score_solution(global_best_position) 
 start_time = time.time()
 
 def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
@@ -66,143 +75,119 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     global restart_position
     global global_best_value
     global global_best_position
-    # Initialize particles
-    best_values_per_population = [Population(np.array(np.array([0,0,0]) for _ in range(9)) , 0) for _ in range(num_particles)]
+
+    #stvaranje ptica i populacija
+    best_values_per_population = [Population(np.array(np.array([0,0,0]) for _ in range(9)) , 0) for _ in range(num_particles)] 
     populations = []
     for _ in range(num_particles):
         population = set()
         while(len(population) < 9):
             bird = Bird(np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi), np.random.uniform(-0.1, 0.1, dimensions))
-            #bird.addToPopulation()
             population.add(bird)
+
         population = list(population)
         populations.append(population)
-    #particles = [Particle(np.random.uniform(-10, 10, dimensions), np.random.uniform(-3, 3, dimensions)) for _ in range(num_particles)]
-
-    # Global best position and value
-    #global_best_position = min(birds, key=lambda p: p.best_value).best_position
-    #global_best_value = f(global_best_position)
     
     
-    w = 1 
-    c1 = 0.5  
+    w = 1 # težina kojom se množi trenutni velocity za svaki objekt
+    c1 = 0.5  # c1, c2 su faktori kojima se množe cognitive i social težine
     c2 = 0.5 
-    gregarious_factor = 2.5*1e-4  
-    v_max = 5
-    v_min = 0
-    epsilon = 1e-3
-    #gamma = 0
-    gamma_min = 2
-    gamma_max = 4
-    delta = 0.25
-
-    u = np.array([1,1,1])
-    l = np.array([0,0,0])
+    gregarious_factor = 2.5*1e-4  #faktor kojim se množi gregarious težina 
+    epsilon = 1e-3 # za definiciju epsilon okoline
 
     it = 0
 
     #for iteration in tqdm(range(max_iterations)):
     while(time.time()-start_time < 3600*hours):
         cnt = 0
-        for p in populations:
+        for p in populations: # idi za svaku populaciju
             cntt = 0
-            for bird in p:
+            for bird in p: # idi za svaki objekt u populaciji
 
-                bird.normalize()
-                #bird.position = np.array(bird.position)
-                #print(particle.velocity)
-                # Update particle velocity
-                #print(bird)
-                #print(bird.best_position)
-                #print(bird.position)
-                r1, r2 = np.random.rand(1), np.random.rand(1)
+                bird.normalize() #normaliziraj objekt
+                
+                #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
+                r1, r2 = np.random.uniform(-1, 1)/2, np.random.uniform(-1, 1)/2
                 cognitive_velocity = c1 * r1 * np.subtract(populations[cnt][cntt].best_position, bird.position)
-                #social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
+                social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
                 gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
                 
-                '''particle.velocity = (w * particle.velocity +
-                                    cognitive_velocity +
-                                    social_velocity +
-                                    gregarious_velocity)
-                '''
-                
-                #print(particle.velocity)
-                #print(norm((particle.position - global_best_position),2))
-                # or norm(particle.velocity, 2) < epsilon
+                #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
                 if norm(bird.velocity, 2) < epsilon:
-                    #print(True)
-                    bird.velocity = np.random.uniform(-0.03,0.03, dimensions)
+                    bird.velocity = np.random.uniform(-0.03,0.03, dimensions) 
                     restart_velocity +=1
-                else:
-                    #particle.velocity = particle.gamma * random.random() * (particle.position -  global_best_position)
+                else:  
                     bird.velocity = (w * bird.velocity +
                                     cognitive_velocity +
-                                    #social_velocity)
+                                    social_velocity + 
                                     gregarious_velocity)
-                #print(particle.velocity)
-                    
-
-
-                #particle.velocity = min(v_max, particle.velocity)
-                #particle.velocity = max(v_min, particle.velocity)
-                bird.velocity = np.clip(bird.velocity, -0.1, 0.1)
-
-                #print(particle.position -  global_best_position)
-                #particle.velocity[:dimensions] = np.c
                 
-                # Update particle position
-                #print(norm((abs(particle.position) - [3,3,3]),2))
-                #print((particle.velocity))
-                if norm(np.subtract(abs(bird.position), l),2) > epsilon and norm(np.subtract(abs(bird.position), u),2) > epsilon:
-                    bird.position += bird.velocity
+                bird.velocity = np.clip(bird.velocity, -0.1, 0.1) #ograniči velocity na interval (-0.1, 0.1)
 
+                '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
+                novi poziciju objekta'''
+
+                if bird.checkPosition(epsilon): 
+                    tmp = np.add(bird.position, bird.velocity)
+                    bird.setPosition(tmp)
+                    
                 else:
                     restart_position += 1
-                    bird.position = np.random.uniform(0, 1, dimensions)
+                    bird.setPosition(np.random.uniform(0, 1, dimensions))
                 
-                # Keep position within bounds
-                bird.position = np.clip(bird.position, 0, 1)
                 
-                # Evaluate new position
+                tmp = np.clip(bird.position, 0, 1)#ograniči poziciju objekta na interval (0,1)
+                bird.setPosition(tmp)
+                
 
-                bird.denormalize()
-                #bird.position = tuple(bird.position)
+                bird.denormalize() #denormaliziraj objekt
                 cntt+=1
 
-            positions = list(g.position for g in p)
-            #print(positions)
-            current_value = score_solution(positions)
-            #print(current_value)
+            '''linija ispod stvara listu pozicija objekata koje ćemo predati funkciji score_solution, dogovorili smo se da ne 
+            predajemo objekte klase nego pozicije
+            '''
+            positions = list(g.position for g in p) 
+            
+            #current_value = random.random()
+            current_value = score_solution(positions) #izračunaj score
+
+            '''provjeri je li score za populaciju bolji od trenutnog najboljeg, ako je postavi tu vrijednost kao najbolju za tu
+            populaciju i postavi tu poziciju objekata kao novu najbolju poziciju objekata'''
+
             if current_value > best_values_per_population[cnt].best_value:
                 best_values_per_population[cnt].best_value = current_value
                 best_values_per_population[cnt].best_position = positions
 
-                for i in range(9):
-                    populations[cnt][i].best_position = best_values_per_population[cnt].best_position[i]
+                for i in range(9): #potrebno za cognitive velocity
+                    populations[cnt][i].setBestPosition(best_values_per_population[cnt].best_position[i])
         
             
-            #print(particle.position)    
-        # Update global best position
-        current_global_best = max(best_values_per_population, key=lambda p: p.best_value)
+            cnt +=1
+            
+        current_global_best = max(best_values_per_population, key=lambda p: p.best_value) #vraća objekt koji ima najbolju vrijednost scorea od svih populacija
+        
+        '''provjerava je li trenutno izračunati current_global_best bolji od dosad najboljeg scorea, 
+        ako je, postavi tu vrijednost kao najbolju i postavi te pozicije objekata kao najbolje'''
         if current_global_best.best_value > global_best_value:
             global_best_value = current_global_best.best_value
             global_best_position = current_global_best.best_position
-        cnt +=1
 
         
         if it%checkpoint == 0:
             print(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}")
 
+            #za zapis checkpointa
+            '''
             file = open("checkpoints.txt", "a")
             file.write(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}, Global Best Position: {global_best_position}\n")
             file.write("###############################################################")
             file.close()
-
+            '''
         it+=1
 
-    return global_best_position, global_best_value
+    return global_best_position, global_best_value 
 
-num_particles = 2
+num_particles = 35 #broj populacija koje stvaramo
 #dimensions = 27
 max_iterations = 100000
 best_position, best_value = gpso(num_particles, max_iterations)
@@ -210,4 +195,3 @@ end_time = time.time()
 print("Best Position:", best_position)
 print("Best Value:", best_value)
 print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
-print(restart_position, restart_velocity)
