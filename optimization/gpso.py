@@ -55,8 +55,8 @@ class Population():
         self.best_value = value
 
 #best_values_per_population = [Population(np.array([0,0,0]) , 0) for _ in range(9)]
-global_best_position = np.array(np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9))
-print(global_best_position)
+global_best_position = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9)]
+#print(global_best_position)
 global_best_value = score_solution(global_best_position)
 start_time = time.time()
 
@@ -102,6 +102,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     while(time.time()-start_time < 3600*hours):
         cnt = 0
         for p in populations:
+            cntt = 0
             for bird in p:
 
                 bird.normalize()
@@ -112,8 +113,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 #print(bird.best_position)
                 #print(bird.position)
                 r1, r2 = np.random.rand(1), np.random.rand(1)
-                cognitive_velocity = c1 * r1 * np.subtract(best_values_per_population[cnt].best_position, bird.position)
-                social_velocity = c2 * r2 * np.subtract(global_best_position, bird.position)
+                cognitive_velocity = c1 * r1 * np.subtract(best_values_per_population[cnt][cntt].best_position, bird.position)
+                social_velocity = c2 * r2 * np.subtract(global_best_position[cntt], bird.position)
                 #gregarious_velocity = gregarious_factor * np.mean([p.position for p in particles], axis=0) - particle.position
                 
                 '''particle.velocity = (w * particle.velocity +
@@ -162,6 +163,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
 
                 bird.denormalize()
                 #bird.position = tuple(bird.position)
+                cntt+=1
 
             positions = np.array(map(lambda bird: bird.position, p))
             current_value = score_solution(positions)
@@ -169,6 +171,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
             if current_value > best_values_per_population[cnt].best_value:
                 best_values_per_population[cnt].best_value = current_value
                 best_values_per_population[cnt].best_position = positions
+
+                for i in range(9):
+                    populations[cnt][cntt].best_position = best_values_per_population[cnt].best_position[cntt]
         
             
             #print(particle.position)    
@@ -197,10 +202,6 @@ num_particles = 2
 max_iterations = 100000
 best_position, best_value = gpso(num_particles, max_iterations)
 end_time = time.time()
-print("Best Position:", best_position)
-print("Best Value:", best_value)
-print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
-print(restart_position, restart_velocity)
 print("Best Position:", best_position)
 print("Best Value:", best_value)
 print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
