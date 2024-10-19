@@ -113,7 +113,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                 gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
                 
                 #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
-                if norm(bird.velocity, 2) < epsilon:
+                if norm(bird.velocity, 2) < epsilon/100:
                     bird.velocity = np.random.uniform(-0.01,0.01, dimensions) 
                     restart_velocity +=1
                 else:  
