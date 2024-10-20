@@ -203,7 +203,7 @@ try:
     num_particles = 35 #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value = gpso(num_particles, max_iterations, hours=3)
+    best_position, best_value = gpso(num_particles, max_iterations, hours=2)
     end_time = time.time()
     print("Best Position:", best_position)
     print("Best Value:", best_value)
