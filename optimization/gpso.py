@@ -65,6 +65,8 @@ class Population(): #klasa u kojoj pratim najbolju poziciju i najbolju vrijednos
         self.best_position = position
         self.best_value = value
 
+
+model_init()
 global_best_position = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9)]
 #global_best_value = random.random()
 global_best_value = score_solution(global_best_position) 
@@ -76,7 +78,6 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     global global_best_value
     global global_best_position
 
-    model_init()
 
     #stvaranje ptica i populacija
     best_values_per_population = [Population(np.array(np.array([0,0,0]) for _ in range(9)) , 0) for _ in range(num_particles)] 
@@ -98,6 +99,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     epsilon = 1e-3 # za definiciju epsilon okoline
 
     it = 0
+
+    evaluated = 0
+    missed = 0
 
     #for iteration in tqdm(range(max_iterations)):
     while(time.time()-start_time < 3600*hours):
@@ -152,6 +156,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
             
             #current_value = random.random()
             current_value = score_solution(positions) #izračunaj score
+            evaluated += 1
+            if current_value == -1:
+                missed += 1
             if math.isnan(current_value):
                 print('nan: ', positions)
                 print(f'score {current_value}')
@@ -179,7 +186,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
 
         
         if it%checkpoint == 0:
-            print(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}")
+            print(f"Iteration {it + 1}, miss percentage: {(missed/evaluated) * 100}%, Global Best Value: {global_best_value}")
 
             #za zapis checkpointa
             '''
@@ -192,12 +199,15 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
 
     return global_best_position, global_best_value 
 
-num_particles = 35 #broj populacija koje stvaramo
-#dimensions = 27
-max_iterations = 100000
-best_position, best_value = gpso(num_particles, max_iterations)
-end_time = time.time()
-print("Best Position:", best_position)
-print("Best Value:", best_value)
-print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
+try:
+    num_particles = 35 #broj populacija koje stvaramo
+    #dimensions = 27
+    max_iterations = 100000
+    best_position, best_value = gpso(num_particles, max_iterations, hours=3)
+    end_time = time.time()
+    print("Best Position:", best_position)
+    print("Best Value:", best_value)
+    print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
+except KeyboardInterrupt:
+    print('stopped, best position: ', global_best_position)
 #print(restart_position, restart_velocity)
