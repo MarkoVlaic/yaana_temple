@@ -154,19 +154,17 @@ void get_walls(struct wall **wa, uint32_t *cnt) {
   }
 }
 
-static void preprocess_mirrors(struct object mirror_objs[8], struct mirror mirrors[8]) {
-  for(int i = 0; i < 8; i++) {
-    struct vec dir = { cosf(mirror_objs[i].angle), sinf(mirror_objs[i].angle) };
-    struct vec normal = { -dir.y, dir.x };
-    mirrors[i] = (struct mirror) { 
-      .start = mirror_objs[i].pos,
-      .end = vec_add(mirror_objs[i].pos, vec_mul(dir, MIRROR_LENGTH)),
-      .seg = segment_new(mirror_objs[i].pos, mirror_objs[i].angle, MIRROR_LENGTH),
-      .angle = mirror_objs[i].angle,
-      .dir = dir,
-      .normal = normal
-    };
-  }
+static void preprocess_mirror(struct object mirror_obj, struct mirror *mirror) {
+  struct vec dir = { cosf(mirror_obj.angle), sinf(mirror_obj.angle) };
+  struct vec normal = { -dir.y, dir.x };
+  *mirror = (struct mirror) {
+    .start = mirror_obj.pos,
+    .end = vec_add(mirror_obj.pos, vec_mul(dir, MIRROR_LENGTH)),
+    .seg = segment_new(mirror_obj.pos, mirror_obj.angle, MIRROR_LENGTH),
+    .angle = mirror_obj.angle,
+    .dir = dir,
+    .normal = normal
+  };
 }
 
 static bool inside_map(struct vec v) {
@@ -259,80 +257,141 @@ static bool solution_valid(struct object light, struct mirror mirrors[8]) {
   return true;
 }
 
-static void raytrace (struct object light_obj, struct mirror mirrors[8], struct score_arg *arg, polygon_t *score_polygon) {
-  struct hitpoint {
-    struct vec point;
-    LIST_ENTRY(hitpoint) next;
+bool next_hitpoint(struct ray ray, struct mirror mirrors[8], int last_mirror, struct mirror *hit_mirror, struct vec *hitpoint) {
+  float t_mirror = INFINITY;
+  int c;
+  float t, u;
+  bool result = true;
+  for(int mirror_j = 0; mirror_j < last_mirror; mirror_j++) {
+    ray_segment_intersection(ray, mirrors[mirror_j].seg, &c, &t, &u);
+    if((c == 2 || c == 3) && t < t_mirror && t > EPSILON) {
+      t_mirror = t;
+      *hit_mirror = mirrors[mirror_j];
+      result = false;
+    }
+  }
+
+  float t_map = map_ray_intersection(ray);
+  t = MIN(t_mirror, t_map);
+  *hitpoint = vec_add(ray.start, vec_mul(ray.dir, t));
+  return result;
+}
+
+struct hitpoint {
+  struct vec point;
+  LIST_ENTRY(hitpoint) next;
+};
+LIST_HEAD(score_vert_list, hitpoint);
+
+void add_score_points(struct ray ray, struct vec ray_normals[2], struct vec hitpoint, struct hitpoint **score_point, struct score_vert_list *score_points, polygon_t *score_polygon) {
+  struct vec endpoints[2] = { 
+    vec_sub(ray.start, vec_mul(ray.dir, 0.5)), 
+    vec_add(hitpoint, vec_mul(ray.dir, 0.5)) 
   };
+  polygon_t rect = polygon_new();
+  for(int i = 0; i < 2; i++) {
+    for(int j = 0; j < 2; j++) {
+      struct vec score_point_vec = vec_add(endpoints[i ^ j], vec_mul(ray_normals[i], 2));
+      if(score_point != NULL) {
+        *score_point = (struct hitpoint *) malloc(sizeof(struct hitpoint));
+        (*score_point)->point = score_point_vec;
+        LIST_INSERT(score_points, *score_point, next);
+      }
+
+      polygon_add_point(rect, score_point_vec);
+    }
+  }
+
+  *score_polygon = polygon_union_rect(*score_polygon, rect);
+  polygon_free(rect);
+}
+
+static bool raytrace(struct object light_obj, struct object mirror_objs[8], struct mirror mirrors[8], struct score_arg *arg, polygon_t *score_polygon) { 
   
   LIST_HEAD(hitpoint_list, hitpoint) hitpoints = LIST_HEAD_INIT();
-  LIST_HEAD(score_vert_list, hitpoint) score_points = LIST_HEAD_INIT();
+  struct score_vert_list score_points = LIST_HEAD_INIT();
 
-  struct ray ray;
-
-  ray = (struct ray) {
+  struct ray ray = {
     .start = light_obj.pos,
     .dir = { cosf(light_obj.angle), sinf(light_obj.angle) }
   };
-
-  struct mirror hit_mirror;
-  struct vec hitpoint;
   struct vec ray_normals[2];
-  float t_mirror, t_map, t, u;
-  int i, j, c;
+  ray_get_normals(&ray, ray_normals, 0.5);
 
   struct hitpoint *cur_hitpoint, *score_point;
-
   if(arg != NULL) {
     cur_hitpoint = (struct hitpoint *) malloc(sizeof(struct hitpoint));
     cur_hitpoint->point = light_obj.pos;
     LIST_INSERT(&hitpoints, cur_hitpoint, next);
   }
 
-  ray_get_normals(&ray, ray_normals, 0.5);
+  struct vec hitpoint;
+  for(int mirror_i = 0; mirror_i < 8; mirror_i++) {
+    while(true) {
+      struct mirror hit_mirror;
 
-  while(true) {
-    t_mirror = INFINITY;
-    for(i = 0; i < 8; i++) {
-      ray_segment_intersection(ray, mirrors[i].seg, &c, &t, &u);
-      if((c == 2 || c == 3) && t < t_mirror && t > EPSILON) {
-        t_mirror = t;
-        hit_mirror = mirrors[i];
+      bool hit_map = next_hitpoint(ray, mirrors, mirror_i, &hit_mirror, &hitpoint);
+      if(!hit_map) {
+        ray.start = hitpoint;
+        ray.dir = vec_sub(ray.dir, vec_mul(hit_mirror.normal, 2 * vec_dot(ray.dir, hit_mirror.normal)));
+        ray_get_normals(&ray, ray_normals, 0.5);
+
+        // if(arg != NULL) {
+        //   cur_hitpoint = (struct hitpoint *) malloc(sizeof(struct hitpoint));
+        //   cur_hitpoint->point = hitpoint;
+        //   LIST_INSERT(&hitpoints, cur_hitpoint, next);
+        // }
+        // add_score_points(ray, ray_normals, hitpoint, &score_point, &score_points, score_polygon);
+        
+        continue;
       }
+
+      break;
     }
 
-    t_map = map_ray_intersection(ray);
-    t = MIN(t_mirror, t_map);
-    hitpoint = vec_add(ray.start, vec_mul(ray.dir, t));
+    struct object next_mirror_params = mirror_objs[mirror_i];
+    float t1, t2, angle;
+    t1 = next_mirror_params.pos.x;
+    t2 = next_mirror_params.pos.y;
+    angle = next_mirror_params.angle;
+    struct object next_mirror;
+    struct vec mirror_start_position = vec_add(ray.start, vec_mul(vec_sub(hitpoint, ray.start), t1));
+    next_mirror.pos = mirror_start_position;
+    next_mirror.angle = angle;
+    preprocess_mirror(next_mirror, &mirrors[mirror_i]);
+    next_mirror.pos = vec_sub(next_mirror.pos, vec_mul(mirrors[mirror_i].seg.dir, t2));
+    preprocess_mirror(next_mirror, &mirrors[mirror_i]);
 
+    ray.start = mirror_start_position;
+    ray.dir = vec_sub(ray.dir, vec_mul(mirrors[mirror_i].normal, 2 * vec_dot(ray.dir, mirrors[mirror_i].normal)));
+    ray_get_normals(&ray, ray_normals, 0.5);
+  
+
+    // if(arg != NULL) {
+    //   cur_hitpoint = (struct hitpoint *) malloc(sizeof(struct hitpoint));
+    //   cur_hitpoint->point = ray.start;
+    //   LIST_INSERT(&hitpoints, cur_hitpoint, next);
+    // }
+  }
+
+  ray = (struct ray) {
+    .start = light_obj.pos,
+    .dir = { cosf(light_obj.angle), sinf(light_obj.angle) }
+  };
+  ray_get_normals(&ray, ray_normals, 0.5);
+  while(true) {
+    struct mirror hit_mirror;
+
+    bool hit_map = next_hitpoint(ray, mirrors, 8, &hit_mirror, &hitpoint);
     if(arg != NULL) {
       cur_hitpoint = (struct hitpoint *) malloc(sizeof(struct hitpoint));
       cur_hitpoint->point = hitpoint;
       LIST_INSERT(&hitpoints, cur_hitpoint, next);
     }
 
-    struct vec endpoints[2] = { 
-      vec_sub(ray.start, vec_mul(ray.dir, 0.5)), 
-      vec_add(hitpoint, vec_mul(ray.dir, 0.5)) 
-    };
-    polygon_t rect = polygon_new();
-    for(i = 0; i < 2; i++) {
-      for(j = 0; j < 2; j++) {
-        struct vec score_point_vec = vec_add(endpoints[i ^ j], ray_normals[i]);
-        if(arg != NULL) {
-          score_point = (struct hitpoint *) malloc(sizeof(struct hitpoint));
-          score_point->point = score_point_vec;
-          LIST_INSERT(&score_points, score_point, next);
-        }
+    add_score_points(ray, ray_normals, hitpoint, &score_point, &score_points, score_polygon);
 
-        polygon_add_point(rect, score_point_vec);
-      }
-    }
-
-    *score_polygon = polygon_union_rect(*score_polygon, rect);
-    polygon_free(rect);
-
-    if(t_mirror < t_map) {
+    if(!hit_map) {
       ray.start = hitpoint;
       ray.dir = vec_sub(ray.dir, vec_mul(hit_mirror.normal, 2 * vec_dot(ray.dir, hit_mirror.normal)));
       ray_get_normals(&ray, ray_normals, 0.5);
@@ -346,7 +405,7 @@ static void raytrace (struct object light_obj, struct mirror mirrors[8], struct 
     uint32_t cnt = LIST_SIZE(&hitpoints); 
     arg->path_len = cnt;
     arg->path = (struct vec *) malloc(sizeof(struct vec) * cnt);
-    i = 0;
+    int i = 0;
     struct hitpoint *hp;
     LIST_FOREACH(hp, &hitpoints, next) {
       arg->path[i] = hp->point;
@@ -362,29 +421,29 @@ static void raytrace (struct object light_obj, struct mirror mirrors[8], struct 
       i++;
     }
   }
+
+  if(!solution_valid(light_obj, mirrors)) {
+    return false;
+  }
+
+  return true;
 }
 
 float score_solution(struct object light, struct object mirror_objs[8], struct score_arg *arg) {
-  //*arg = malloc(sizeof(struct score_arg));
   struct mirror mirrors[8];
 
-  preprocess_mirrors(mirror_objs, mirrors);
-  
+  polygon_t score_polygon = NULL;
+  bool valid = raytrace(light, mirror_objs, mirrors, arg, &score_polygon);
+
   if(arg != NULL) {
-    //arg->mirrors = malloc(sizeof(struct mirror) * 8);
     for(int i=0;i<8;i++) {
       arg->mirrors[i] = mirrors[i];
     }
   }
 
-  if(!solution_valid(light, mirrors)) {
-    //printf("solution invalid\n");
+  if(!valid) {
     return -1;
   }
-
-  polygon_t score_polygon = NULL;
-  raytrace(light, mirrors, arg, &score_polygon);
-
   score_polygon = polygon_clip_walls(score_polygon);
 
   if(arg != NULL) {

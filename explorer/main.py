@@ -1,5 +1,7 @@
 from tkinter import *
 from tkinter import ttk
+from random import random
+from math import pi
 
 from model_module.model import *
 
@@ -63,15 +65,15 @@ class Layer:
 # ]
 
 solution = [
-  (11.9000473, 11.2402325, 5.064785),
- (14.3370533, 14.9436102, 6.23196363),
- (2.67050004, 14.5084171, 4.38338137),
- (11.3951378, 14.3471565, 1.0115509),
- (4.46037483, 5.67385578, 4.57105589),
- (6.17021132, 11.7164326, 0.664270401),
- (1.45785999, 7.75276423, 4.82507467),
- (10.4386377, 3.66177177, 5.60134935),
- (9.97608089, 7.50167274, 0.815995574)
+  (5, 5, 0.26),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi)
 ]
 
 # solution = [
@@ -230,7 +232,12 @@ if __name__ == '__main__':
   (walls, size) = get_walls()
   score_result = evaluate_solution(solution)
   print(f'got score: {score_result.get_score()}')
+  print('api: ', score_solution(solution))
   mirrors = score_result.get_mirrors()
+
+  print('mirrors:')
+  for mirror in mirrors:
+    print(f'({mirror.start.x} {mirror.start.y} {mirror.angle})')
 
   state = State()
   state.set_walls(walls)

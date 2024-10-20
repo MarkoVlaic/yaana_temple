@@ -7,45 +7,44 @@ int main() {
   model_init();
 
   struct object light = {
-    .pos = { 16.5442638, 3.82861733},
-    .angle = 4.37968731
+    .pos = { 5, 5},
+    .angle = 0.26
   };
 
   struct object mirrors[8];
 
   mirrors[0] = (struct object) {
-            .pos = { 11.6856909, 6.5166831 },
-            .angle = 1.66598213
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[1] = (struct object) {
-            .pos = { 3.43560505, 10.2965584 },
-            .angle = 0.871678054
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[2] = (struct object) {
-            .pos = { 9.70941448, 12.3708687 },
-            .angle = 3.75155759
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[3] = (struct object) {
-            .pos = { 4.07741928, 11.7029171 },
-            .angle = 1.66413093
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[4] = (struct object) {
-            .pos = { 15.9491453, 14.3437719 },
-            .angle = 2.82717705
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[5] = (struct object) {
-            .pos = { 11.0879555, 12.4287834 },
-            .angle = 5.95866919
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
 mirrors[6] = (struct object) {
-            .pos = { 2.29543543, 6.57751131 },
-            .angle = 5.07053852
-         };
+   .pos = { 0.5, 0.5 },
+   .angle = 0.26
+};
 mirrors[7] = (struct object) {
-            .pos = { 6.62103939, 12.3743782 },
-            .angle = 1.85373354
+            .pos = { 0.5, 0.5 },
+            .angle = 0.26
          };
-
   // struct score_arg arg;
 
   float score = score_solution(light, mirrors, NULL);
