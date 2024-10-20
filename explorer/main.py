@@ -1,6 +1,11 @@
 from tkinter import *
 from tkinter import ttk
+<<<<<<< HEAD
 from numpy import array
+=======
+from random import random
+from math import pi
+>>>>>>> model
 
 from model_module.model import *
 
@@ -63,8 +68,22 @@ class Layer:
 #   (13.8,11.5,-0.54)
 # ]
 
+<<<<<<< HEAD
 solution = [array([0.86980295, 0.86356668, 0.95187484]), array([0.81626027, 0.91231094, 0.61830309]), array([0.92946601, 0.77455118, 0.56662184]), array([0.92736552, 0.61326129, 0.77953028]), array([0.65291716, 0.73604308, 0.94138379]), array([0.68181564, 0.90489311, 0.90315807]), array([0.90413466, 0.32760281, 0.34869963]), array([0.8754698 , 0.87269198, 0.6227868 ]), array([0.65579837, 0.87907932, 0.74951819])]
 
+=======
+solution = [
+  (5, 5, 0.26),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi),
+  (0.5, random(), random() * pi)
+]
+>>>>>>> model
 
 # solution = [
 #   (5, 5, 0.26),
@@ -222,8 +241,12 @@ if __name__ == '__main__':
   (walls, size) = get_walls()
   score_result = evaluate_solution(solution)
   print(f'got score: {score_result.get_score()}')
-  print(f'with score_solution: ', score_solution(solution))
+  print('api: ', score_solution(solution))
   mirrors = score_result.get_mirrors()
+
+  print('mirrors:')
+  for mirror in mirrors:
+    print(f'({mirror.start.x} {mirror.start.y} {mirror.angle})')
 
   state = State()
   state.set_walls(walls)

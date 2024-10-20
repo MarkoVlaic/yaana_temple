@@ -1,8 +1,9 @@
 from _model import lib, ffi
 
 class ScoreResult:
-  def __init__(self, score, arg):
+  def __init__(self, score, light, arg):
     self.score = score
+    self.light = light
     self.arg = arg
 
     if self.arg == ffi.NULL:
@@ -19,6 +20,9 @@ class ScoreResult:
     self.clipped_polygon = []
     for i in range(arg.clipped_polygon_size):
       self.clipped_polygon.append(arg.clipped_polygon[i])
+
+  def get_light(self):
+    return self.light
 
   def get_score(self):
     return self.score
@@ -74,10 +78,16 @@ def evaluate_solution(objs, collect_arg=True):
   if not collect_arg:
     arg = ffi.NULL
 
-
   score = lib.score_solution(light_obj[0], mirror_objs, arg)
-  return ScoreResult(score, arg)
+  return ScoreResult(score, light_tuple, arg)
 
+'''
+returns the score and resultant configuration
+'''
 def score_solution(objs):
-  result = evaluate_solution(objs, False)
-  return result.get_score()
+  result = evaluate_solution(objs, True)
+  configuration = [result.get_light()]
+  mirror_objs = result.get_mirrors()
+  for i in range(8):
+    configuration.append((mirror_objs[i].start.x, mirror_objs[i].start.y, mirror_objs[i].angle))
+  return (result.get_score(), configuration)
