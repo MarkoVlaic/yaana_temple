@@ -4,8 +4,8 @@ from tqdm import *
 import numpy as np
 from numpy.linalg import norm
 import time
-from model_module import *
-from model import score_solution
+from model_module.model import *
+import math
 
 restart_position  = 0
 restart_velocity = 0
@@ -75,6 +75,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
     global restart_position
     global global_best_value
     global global_best_position
+
+    model_init()
 
     #stvaranje ptica i populacija
     best_values_per_population = [Population(np.array(np.array([0,0,0]) for _ in range(9)) , 0) for _ in range(num_particles)] 
@@ -150,6 +152,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
             
             #current_value = random.random()
             current_value = score_solution(positions) #izračunaj score
+            if math.isnan(current_value):
+                print('nan: ', positions)
+                print(f'score {current_value}')
 
             '''provjeri je li score za populaciju bolji od trenutnog najboljeg, ako je postavi tu vrijednost kao najbolju za tu
             populaciju i postavi tu poziciju objekata kao novu najbolju poziciju objekata'''

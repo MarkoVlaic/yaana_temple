@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from numpy import array
 
 from model_module.model import *
 
@@ -35,8 +36,8 @@ class State:
     self.score_rects = sr
 
   def get_score_rects(self):
-    return self.score_rects
 
+    return self.score_rects
   def set_clipped_polygon(self, cp):
     self.clipped_polygon = cp
 
@@ -62,17 +63,8 @@ class Layer:
 #   (13.8,11.5,-0.54)
 # ]
 
-solution = [
-  (11.9000473, 11.2402325, 5.064785),
- (14.3370533, 14.9436102, 6.23196363),
- (2.67050004, 14.5084171, 4.38338137),
- (11.3951378, 14.3471565, 1.0115509),
- (4.46037483, 5.67385578, 4.57105589),
- (6.17021132, 11.7164326, 0.664270401),
- (1.45785999, 7.75276423, 4.82507467),
- (10.4386377, 3.66177177, 5.60134935),
- (9.97608089, 7.50167274, 0.815995574)
-]
+solution = [array([18.36757783,  5.75249084,  2.4525614 ]), array([15.44503635,  8.49642532,  1.41649947]), array([ 8.59483104, 11.31982397,  1.77197959]), array([17.80677002,  1.86956919,  0.99403796]), array([15.31557581,  3.29849498,  0.47180632]), array([8.02537621, 3.72049698, 2.71474361]), array([1.89704176, 9.76610093, 0.2978302 ]), array([16.6148736 , 13.27770394,  1.73484117]), array([ 2.60462825, 17.07495097,  2.32177681])]
+
 
 # solution = [
 #   (5, 5, 0.26),
@@ -230,6 +222,7 @@ if __name__ == '__main__':
   (walls, size) = get_walls()
   score_result = evaluate_solution(solution)
   print(f'got score: {score_result.get_score()}')
+  print(f'with score_solution: ', score_solution(solution))
   mirrors = score_result.get_mirrors()
 
   state = State()
