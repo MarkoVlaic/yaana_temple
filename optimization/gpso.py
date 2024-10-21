@@ -31,14 +31,20 @@ class Bird:
     def addToPopulation(self):
         population.add(self.getPosition())
 
-    def normalize(self):
+    def normalize_lamp(self):
         self.position[0] /= 19
         self.position[1] /= 19
         self.position[2] /= pi
 
-    def denormalize(self):
+    def denormalize_lamp(self):
         self.position[0] *= 19
         self.position[1] *= 19
+        self.position[2] *= pi
+        
+    def normalize_mirror(self):
+        self.position[2] /= pi
+
+    def denormalize_mirror(self):
         self.position[2] *= pi
 
     def checkPosition(self, epsilon): #provjerava da nisu sve tri vrijednosti objekta (x,y,alpha) zapele u epsilon okolinu (0,0,0) ili (1,1,1)
@@ -67,12 +73,19 @@ class Population(): #klasa u kojoj pratim najbolju poziciju i najbolju vrijednos
 
 
 model_init()
-global_best_position = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20), np.random.uniform(0, pi)]) for _ in range(9)]
+global_best_position = [np.array([np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, pi)])]
+for i in range(8):
+    global_best_position.append(np.array([np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, pi)]))
 #global_best_value = random.random()
-global_best_value = score_solution(global_best_position) 
+#print(global_best_position)
+tmp_res = score_solution(global_best_position)
+#print(tmp_res)
+global_best_value = tmp_res[0]
+global_best_position = tmp_res[1] 
+#print(global_best_position)
 start_time = time.time()
 
-def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
+def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, threshold=0.05):
     global restart_velocity
     global restart_position
     global global_best_value
@@ -80,18 +93,29 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
 
     epsilon = 1e-3
     #stvaranje ptica i populacija
-    best_values_per_population = [Population(np.array(np.array([np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(0+epsilon, pi-epsilon)]) for _ in range(9)) , 0) for _ in range(num_particles)] 
+    best_values_per_population = [Population(np.array(np.array([np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon)]) for _ in range(9)) , 0) for _ in range(num_particles)] 
     populations = []
-    for _ in range(num_particles):
-        population = set()
+    #for _ in range(num_particles):
+    while(len(populations) < num_particles): #radi ovo sve dok ne stvoris num_particles populacija
+        population = set() #stvori set, pa u njega dodaj lampu i onda osam ogledala
+        population.add(Bird(np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions)))
         while(len(population) < 9):
-            bird = Bird(np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions))
+            bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions))
             population.add(bird)
-
+        
+        
         population = list(population)
-        populations.append(population)
-    
-    
+        positions = list(g.position for g in population) #kreiraj listu pozicija od kreirane liste objekata
+        tmp_res = score_solution(positions) #provjeri score
+        #print(tmp_res[0])
+        if tmp_res[0] > threshold: #ako je veci od thresholda, dodaj tu populaciju u listu populacija
+            populations.append(population)
+            
+            if tmp_res[0] > global_best_value: #provjeri da score slucajno nije veci od global_best, ako je postavi novi global_best za score i tu poziciju
+                global_best_value = tmp_res[0]
+                global_best_position = tmp_res[1]
+        
+    print('Kreirane populacije')
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
     c1 = 0.2  # c1, c2 su faktori kojima se množe cognitive i social težine
     c2 = 0.1 
@@ -109,8 +133,17 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
         for p in populations: # idi za svaku populaciju
             cntt = 0
             for bird in p: # idi za svaki objekt u populaciji
+            
+                if it == 0: #ako je prva iteracija, normaliziraj sve jer pri kreaciji ptica ne radim distinkciju izmedu lampe i ogledala
 
-                bird.normalize() #normaliziraj objekt
+                    bird.normalize_lamp() #normaliziraj objekt
+                    
+                else:
+                
+                    if cntt == 0: #ako nije prva iteracija, lampu normaliziraj kao i prije, a kod ogledala normaliziraj samo kut
+                        bird.normalize_lamp()
+                    else:
+                        bird.normalize_mirror()
                 
                 #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
                 r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
@@ -140,14 +173,16 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
                     
                 else:
                     restart_position += 1
-                    bird.setPosition(np.random.uniform(1/19+epsilon, 1-epsilon, dimensions))
+                    bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
                 
                 
                 np.clip(bird.position, 0+epsilon, 1-epsilon, out=bird.position)#ograniči poziciju objekta na interval (0,1)
                 #bird.setPosition(tmp)
                 
-
-                bird.denormalize() #denormaliziraj objekt
+                if cntt == 0: #ako je objekt lampa, denormaliziraj kao lampu, inace denormaliziraj kao ogledalo
+                    bird.denormalize_lamp() #denormaliziraj objekt
+                else:
+                    bird.denormalize_mirror()
                 cntt+=1
 
             '''linija ispod stvara listu pozicija objekata koje ćemo predati funkciji score_solution, dogovorili smo se da ne 
@@ -156,7 +191,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
             positions = list(g.position for g in p) 
             #print(positions)
             #current_value = random.random()
-            current_value = score_solution(positions) #izračunaj score
+            
+            tmp_res = score_solution(positions)
+            current_value = tmp_res[0] #izračunaj score
             evaluated += 1
             if current_value == -1:
                 missed += 1
@@ -169,7 +206,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6):
 
             if current_value > best_values_per_population[cnt].best_value:
                 best_values_per_population[cnt].best_value = current_value
-                best_values_per_population[cnt].best_position = positions
+                best_values_per_population[cnt].best_position = tmp_res[1]
                 
                 #print(best_values_per_population[0].best_position)
 
@@ -213,10 +250,10 @@ def denormalize(global_best_position):
         i[1]*=19
         i[2]*=pi
 try:
-    num_particles = 350 #broj populacija koje stvaramo
+    num_particles = 100 #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value = gpso(num_particles, max_iterations, hours=3)
+    best_position, best_value = gpso(num_particles, max_iterations, hours=3, threshold=-2)
     end_time = time.time()
     print(best_position)
     denormalize(best_position)
@@ -225,10 +262,7 @@ try:
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
 except KeyboardInterrupt:
     print(global_best_position)
-    denormalize(global_best_position)
+    #denormalize(global_best_position)
     #print("Best Position:", best_position)
     print('stopped, best position: ', global_best_position)
     print('stopped, best value: ', global_best_value)
-#print(restart_position, restart_velocity)
-
-
