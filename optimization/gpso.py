@@ -67,13 +67,13 @@ class Bird:
 
 class Population(): #klasa u kojoj pratim najbolju poziciju i najbolju vrijednost za svaku populaciju, populacija = lampa + 8 ogledala
 
-    def __init__(self, position, value):
+    def __init__(self, position, value, best_input):
         self.best_position = position
         self.best_value = value
-
+        self.best_input = best_input
 
 model_init()
-global_best_position = [np.array([np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, pi)])]
+global_best_position = [np.array([np.random.uniform(1, 19), np.random.uniform(1, 19), np.random.uniform(0, pi)])]
 for i in range(8):
     global_best_position.append(np.array([np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, pi)]))
 #global_best_value = random.random()
@@ -81,7 +81,8 @@ for i in range(8):
 tmp_res = score_solution(global_best_position)
 #print(tmp_res)
 global_best_value = tmp_res[0]
-global_best_position = tmp_res[1] 
+global_best_position = tmp_res[1]
+global_best_input = [p for p in global_best_position]
 #print(global_best_position)
 start_time = time.time()
 
@@ -95,7 +96,15 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
 
     epsilon = 1e-3
     #stvaranje ptica i populacija
-    best_values_per_population = [Population(np.array(np.array([np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon)]) for _ in range(9)) , 0) for _ in range(num_particles)] 
+    best_values_per_population = [
+        Population(
+            np.array(
+                np.array([np.random.uniform(0+epsilon, 1-epsilon),
+                np.random.uniform(0+epsilon, 1-epsilon),
+                np.random.uniform(0+epsilon, pi-epsilon),
+                np.random.uniform(0+epsilon, 1-epsilon)]) for _ in range(9)
+            ) , 0, []) for _ in range(num_particles)
+        ] 
     populations = []
     #for _ in range(num_particles):
     while(len(populations) < num_particles): #radi ovo sve dok ne stvoris num_particles populacija
@@ -104,7 +113,6 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         while(len(population) < 9):
             bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions))
             population.add(bird)
-        
         
         population = list(population)
         positions = list(g.position for g in population) #kreiraj listu pozicija od kreirane liste objekata
@@ -116,6 +124,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
             if tmp_res[0] > global_best_value: #provjeri da score slucajno nije veci od global_best, ako je postavi novi global_best za score i tu poziciju
                 global_best_value = tmp_res[0]
                 global_best_position = tmp_res[1]
+                global_best_input = [p for p in positions]
         
     print('Kreirane populacije')
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
@@ -201,6 +210,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
             if current_value > best_values_per_population[cnt].best_value:
                 best_values_per_population[cnt].best_value = current_value
                 best_values_per_population[cnt].best_position = tmp_res[1]
+                best_values_per_population[cnt].best_input = [t for t in positions]
                 
                 #print(best_values_per_population[0].best_position)
 
@@ -221,6 +231,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
             
             global_best_value = current_global_best.best_value
             global_best_position = current_global_best.best_position
+            global_best_input = [t for t in current_global_best.best_input]
 
         
         if it%checkpoint == 0:
@@ -236,7 +247,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         it+=1
         #print(global_best_position)
 
-    return global_best_position, global_best_value 
+    return global_best_position, global_best_value, global_best_input
 
 def denormalize(global_best_position):
     for i in global_best_position:
@@ -247,16 +258,18 @@ try:
     num_particles = 100  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value = gpso(num_particles, max_iterations, hours=9, threshold=-2)
+    best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=1, threshold=-2)
     end_time = time.time()
     print(best_position)
     #denormalize(best_position)
     print("Best Position:", best_position)
     print("Best Value:", best_value)
+    print('Best input', best_input)
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
 except KeyboardInterrupt:
-    print(global_best_position)
+    print('stopped')
+    print('global_best_position:', global_best_position)
+    print('global_best_value: ', global_best_value)
+    print('globa_best_input', global_best_input)
     #denormalize(global_best_position)
     #print("Best Position:", best_position)
-    print('stopped, best position: ', global_best_position)
-    print('stopped, best value: ', global_best_value)

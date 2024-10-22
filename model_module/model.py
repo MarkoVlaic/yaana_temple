@@ -62,7 +62,7 @@ def get_walls():
   return (walls, size)
 
 def evaluate_solution(objs, collect_arg=True):
-  light_tuple = objs[0]
+  light_tuple = tuple((objs[0][i] for i in range(3)))
   light_obj = ffi.new('struct object *')
   light_obj.pos.x = light_tuple[0]
   light_obj.pos.y = light_tuple[1]
@@ -89,6 +89,7 @@ returns the score and resultant configuration
 '''
 def score_solution(objs):
   result = evaluate_solution(objs, False)
+
   configuration = [result.get_light()]
   mirror_objs = result.get_mirrors()
   for i in range(8):
