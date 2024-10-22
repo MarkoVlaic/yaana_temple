@@ -91,6 +91,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     global global_best_value
     global global_best_position
 
+    print('gpso')
+
     epsilon = 1e-3
     #stvaranje ptica i populacija
     best_values_per_population = [Population(np.array(np.array([np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon)]) for _ in range(9)) , 0) for _ in range(num_particles)] 
@@ -133,17 +135,10 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         for p in populations: # idi za svaku populaciju
             cntt = 0
             for bird in p: # idi za svaki objekt u populaciji
-            
-                if it == 0: #ako je prva iteracija, normaliziraj sve jer pri kreaciji ptica ne radim distinkciju izmedu lampe i ogledala
-
-                    bird.normalize_lamp() #normaliziraj objekt
-                    
+                if cntt == 0: #ako nije prva iteracija, lampu normaliziraj kao i prije, a kod ogledala normaliziraj samo kut
+                    bird.normalize_lamp()
                 else:
-                
-                    if cntt == 0: #ako nije prva iteracija, lampu normaliziraj kao i prije, a kod ogledala normaliziraj samo kut
-                        bird.normalize_lamp()
-                    else:
-                        bird.normalize_mirror()
+                    bird.normalize_mirror()
                 
                 #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
                 r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
@@ -189,7 +184,6 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
             predajemo objekte klase nego pozicije
             '''
             positions = list(g.position for g in p) 
-            #print(positions)
             #current_value = random.random()
             
             tmp_res = score_solution(positions)
@@ -250,13 +244,13 @@ def denormalize(global_best_position):
         i[1]*=19
         i[2]*=pi
 try:
-    num_particles = 100 #broj populacija koje stvaramo
+    num_particles = 100  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value = gpso(num_particles, max_iterations, hours=3, threshold=-2)
+    best_position, best_value = gpso(num_particles, max_iterations, hours=9, threshold=-2)
     end_time = time.time()
     print(best_position)
-    denormalize(best_position)
+    #denormalize(best_position)
     print("Best Position:", best_position)
     print("Best Value:", best_value)
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")

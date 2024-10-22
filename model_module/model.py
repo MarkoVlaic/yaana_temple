@@ -1,9 +1,10 @@
 from _model import lib, ffi
 
 class ScoreResult:
-  def __init__(self, score, light, arg):
+  def __init__(self, score, light, mirrors, arg):
     self.score = score
     self.light = light
+    self.mirrors = mirrors
     self.arg = arg
 
     if self.arg == ffi.NULL:
@@ -28,7 +29,7 @@ class ScoreResult:
     return self.score
 
   def get_mirrors(self):
-    return self.arg.mirrors
+    return self.mirrors
 
   def get_path(self):
     return self.path
@@ -74,18 +75,20 @@ def evaluate_solution(objs, collect_arg=True):
     mirror_objs[i].pos.y = mirror_tuple[1]
     mirror_objs[i].angle = mirror_tuple[2]
 
+  mirror_result = ffi.new('struct mirror[8]')
+
   arg = ffi.new('struct score_arg *')
   if not collect_arg:
     arg = ffi.NULL
 
-  score = lib.score_solution(light_obj[0], mirror_objs, arg)
-  return ScoreResult(score, light_tuple, arg)
+  score = lib.score_solution(light_obj[0], mirror_objs, mirror_result, arg)
+  return ScoreResult(score, light_tuple, mirror_result, arg)
 
 '''
 returns the score and resultant configuration
 '''
 def score_solution(objs):
-  result = evaluate_solution(objs, True)
+  result = evaluate_solution(objs, False)
   configuration = [result.get_light()]
   mirror_objs = result.get_mirrors()
   for i in range(8):

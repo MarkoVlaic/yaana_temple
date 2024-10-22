@@ -16,6 +16,7 @@
 #define MIRROR_LENGTH 0.5f
 #define EPSILON 1e-4
 #define FREE_SPACE_AREA 272.0f
+#define LOOP_ITER_THRESHOLD 100000
 
 char map[MAP_SIDE + 1][MAP_SIDE + 1] = {
   "OOOOOOOOOOOOOOOOOOOO",
@@ -327,7 +328,14 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
 
   struct vec hitpoint;
   for(int mirror_i = 0; mirror_i < 8; mirror_i++) {
+    int cnt = 0;
     while(true) {
+      cnt++;
+      if(cnt > LOOP_ITER_THRESHOLD) {
+        //printf("stuck in the first loop, returning!\n");
+        return -1;
+      }
+
       struct mirror hit_mirror;
 
       bool hit_map = next_hitpoint(ray, mirrors, mirror_i, &hit_mirror, &hitpoint);
@@ -354,12 +362,17 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
     t1 = next_mirror_params.pos.x;
     t2 = next_mirror_params.pos.y;
     angle = next_mirror_params.angle;
+
     struct object next_mirror;
     struct vec mirror_start_position = vec_add(ray.start, vec_mul(vec_sub(hitpoint, ray.start), t1));
     next_mirror.pos = mirror_start_position;
     next_mirror.angle = angle;
     preprocess_mirror(next_mirror, &mirrors[mirror_i]);
+    
     next_mirror.pos = vec_sub(next_mirror.pos, vec_mul(mirrors[mirror_i].seg.dir, t2));
+    if(!inside_map(next_mirror.pos)) {
+      return -1;
+    }
     preprocess_mirror(next_mirror, &mirrors[mirror_i]);
 
     ray.start = mirror_start_position;
@@ -374,12 +387,23 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
     // }
   }
 
+  if(!solution_valid(light_obj, mirrors)) {
+    return false;
+  }
+
   ray = (struct ray) {
     .start = light_obj.pos,
     .dir = { cosf(light_obj.angle), sinf(light_obj.angle) }
   };
   ray_get_normals(&ray, ray_normals, 0.5);
+  int cnt = 0;
   while(true) {
+    cnt++;
+    if(cnt > LOOP_ITER_THRESHOLD) {
+        //printf("stuck in the second loop, returning!\n");
+        return -1;
+      }
+
     struct mirror hit_mirror;
 
     bool hit_map = next_hitpoint(ray, mirrors, 8, &hit_mirror, &hitpoint);
@@ -422,26 +446,14 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
     }
   }
 
-  if(!solution_valid(light_obj, mirrors)) {
-    return false;
-  }
-
   return true;
 }
 
-float score_solution(struct object light, struct object mirror_objs[8], struct score_arg *arg) {
-  struct mirror mirrors[8];
-
+float score_solution(struct object light, struct object mirror_objs[8], struct mirror mirror_result[8], struct score_arg *arg) {
   polygon_t score_polygon = NULL;
-  bool valid = raytrace(light, mirror_objs, mirrors, arg, &score_polygon);
+  bool valid = raytrace(light, mirror_objs, mirror_result, arg, &score_polygon);
 
-  if(arg != NULL) {
-    for(int i=0;i<8;i++) {
-      arg->mirrors[i] = mirrors[i];
-    }
-  }
-
-  if(!valid) {
+  if(!valid || score_polygon == NULL) {
     return -1;
   }
   score_polygon = polygon_clip_walls(score_polygon);

@@ -55,8 +55,10 @@ int main() {
     .angle = -0.54
   };
 
+  struct mirror mirror_result[8];
+
   for(int i=0;i<ITERATIONS;i++) {
-    score_solution(light, mirrors, NULL);
+    score_solution(light, mirrors, mirror_result, NULL);
   }
 
 }

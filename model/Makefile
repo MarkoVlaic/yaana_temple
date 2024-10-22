@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-MMD -Wall -g
+CFLAGS=-MMD -Wall -O3
 LDFLAGS = -lm -lmodel -lstdc++
 
 BUILD_DIR=build
@@ -36,7 +36,7 @@ run-benchmark:
 .PHONY: run-fuzzer
 run-fuzzer: export LD_LIBRARY_PATH = $(shell pwd)
 run-fuzzer:
-	./fuzzer
+	gdb ./fuzzer
 
 test: $(BUILD_DIR) $(LIB_MODEL_OBJECTS) libmodel.so $(BUILD_DIR)/exe/test.o $(HEADERS)
 	$(CC) $(BUILD_DIR)/exe/test.o -L$(shell pwd) $(LDFLAGS) -o test

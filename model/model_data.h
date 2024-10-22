@@ -28,7 +28,6 @@ struct mirror {
 struct score_arg {
   struct vec *path;
   uint32_t path_len;
-  struct mirror mirrors[8];
   struct vec *score_rects;
   uint32_t score_rects_len;
   struct vec *clipped_polygon;
