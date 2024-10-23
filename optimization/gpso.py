@@ -168,8 +168,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                                     cognitive_velocity +
                                     social_velocity + 
                                     gregarious_velocity)
-                                    
-                bird.velocity[2] /= 20
+
+                bird.velocity[1] /= 20
+                bird.velocity[2] /= 10
                 
                 np.clip(bird.velocity, -0.01, 0.01, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
