@@ -168,6 +168,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                                     cognitive_velocity +
                                     social_velocity + 
                                     gregarious_velocity)
+                                    
+                bird.velocity[2] /= 20
                 
                 np.clip(bird.velocity, -0.01, 0.01, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
@@ -254,17 +256,20 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
 
     return global_best_position, global_best_value, global_best_input
 
-def denormalize(global_best_position):
-    for i in global_best_position:
-        i[0]*=19
-        i[1]*=19
-        i[2]*=pi
-        break
+def denormalize(arr):
+    for i in range(len(arr)):
+        if i == 0:
+            arr[i][0]*=19
+            arr[i][1]*=19
+            arr[i][2]*=pi
+        else:
+            arr[i][2]*=pi
+        
 try:
-    num_particles = 100  #broj populacija koje stvaramo
+    num_particles = 10  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=1, threshold=-2)
+    best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=2.5, threshold=-2)
     end_time = time.time()
     print(best_position)
     denormalize(best_input)
@@ -280,4 +285,3 @@ except KeyboardInterrupt:
     print('global_best_input', global_best_input)
     #denormalize(global_best_position)
     #print("Best Position:", best_position)
-
