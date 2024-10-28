@@ -284,7 +284,7 @@ struct hitpoint {
 };
 LIST_HEAD(score_vert_list, hitpoint);
 
-void add_score_points(struct ray ray, struct vec ray_normals[2], struct vec hitpoint, struct hitpoint **score_point, struct score_vert_list *score_points, polygon_t *score_polygon) {
+void add_score_points(struct ray ray, struct vec ray_normals[2], struct vec hitpoint, struct hitpoint **score_point, struct score_vert_list *score_points, polygon_vec_t *score_polygon) {
   struct vec endpoints[2] = { 
     vec_sub(ray.start, vec_mul(ray.dir, 0.5)), 
     vec_add(hitpoint, vec_mul(ray.dir, 0.5)) 
@@ -307,7 +307,7 @@ void add_score_points(struct ray ray, struct vec ray_normals[2], struct vec hitp
   polygon_free(rect);
 }
 
-static bool raytrace(struct object light_obj, struct object mirror_objs[8], struct mirror mirrors[8], struct score_arg *arg, polygon_t *score_polygon) { 
+static bool raytrace(struct object light_obj, struct object mirror_objs[8], struct mirror mirrors[8], struct score_arg *arg, polygon_vec_t *score_polygon) { 
   
   LIST_HEAD(hitpoint_list, hitpoint) hitpoints = LIST_HEAD_INIT();
   struct score_vert_list score_points = LIST_HEAD_INIT();
@@ -400,9 +400,13 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
   while(true) {
     cnt++;
     if(cnt > LOOP_ITER_THRESHOLD) {
-        //printf("stuck in the second loop, returning!\n");
-        return -1;
-      }
+      //printf("stuck in the second loop, returning!\n");
+      return -1;
+    }
+
+    if(cnt == 10) {
+      //break;
+    }
 
     struct mirror hit_mirror;
 
@@ -450,7 +454,7 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
 }
 
 float score_solution(struct object light, struct object mirror_objs[8], struct mirror mirror_result[8], struct score_arg *arg) {
-  polygon_t score_polygon = NULL;
+  polygon_vec_t score_polygon = NULL;
   bool valid = raytrace(light, mirror_objs, mirror_result, arg, &score_polygon);
 
   if(!valid || score_polygon == NULL) {
