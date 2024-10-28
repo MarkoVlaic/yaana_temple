@@ -72,6 +72,13 @@ class Population(): #klasa u kojoj pratim najbolju poziciju i najbolju vrijednos
         self.best_position = position
         self.best_value = value
         self.best_input = best_input
+        
+def top_five(d, key, value1, value2, k=5):
+    d[key] = [value1, value2]
+    sorted_d = dict(sorted(d.items(), reverse=True))
+    sorted_d = dict(list(sorted_d.items())[:k])
+    
+    return sorted_d
 
 model_init()
 global_best_input = [np.array([np.random.uniform(1, 19), np.random.uniform(1, 19), np.random.uniform(0, pi)])]
@@ -81,8 +88,11 @@ for i in range(8):
 #print(global_best_position)
 tmp_res = score_solution(global_best_input)
 #print(tmp_res)
-global_best_value = tmp_res[0]
-global_best_position = tmp_res[1]
+
+global_best = dict()
+value = tmp_res[0]
+position = tmp_res[1]
+global_best = top_five(global_best, value, position, global_best_input)
 #global_best_input = [p for p in global_best_position]
 #print(global_best_position)
 start_time = time.time()
@@ -90,9 +100,7 @@ start_time = time.time()
 def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, threshold=0.05):
     global restart_velocity
     global restart_position
-    global global_best_value
-    global global_best_position
-    global global_best_input
+    global global_best
 
     print('gpso')
 
@@ -124,11 +132,13 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         if tmp_res[0] > threshold: #ako je veci od thresholda, dodaj tu populaciju u listu populacija
             populations.append(population)
             
+            global_best = top_five(global_best, tmp_res[0], tmp_res[1], positions)
+            '''
             if tmp_res[0] > global_best_value: #provjeri da score slucajno nije veci od global_best, ako je postavi novi global_best za score i tu poziciju
                 global_best_value = tmp_res[0]
                 global_best_position = tmp_res[1]
                 global_best_input = positions
-        
+            '''
     print('Kreirane populacije')
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
     c1 = 0.1  # c1, c2 su faktori kojima se množe cognitive i social težine
@@ -168,9 +178,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                                     cognitive_velocity +
                                     social_velocity + 
                                     gregarious_velocity)
-
+                
                 bird.velocity[1] /= 20
-                bird.velocity[2] /= 10
+                #bird.velocity[2] /= 10
                 
                 np.clip(bird.velocity, -0.01, 0.01, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
@@ -235,54 +245,84 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         #print(current_global_best.best_value, current_global_best.best_position)
         '''provjerava je li trenutno izračunati current_global_best bolji od dosad najboljeg scorea, 
         ako je, postavi tu vrijednost kao najbolju i postavi te pozicije objekata kao najbolje'''
+        global_best = top_five(global_best, current_global_best.best_value, current_global_best.best_position, current_global_best.best_input)
+        '''
         if current_global_best.best_value > global_best_value:
             
             global_best_value = current_global_best.best_value
             global_best_position = current_global_best.best_position
             global_best_input = current_global_best.best_input
-
+        '''
         
         if it%checkpoint == 0:
-            print(f"Iteration {it + 1}, miss percentage: {(missed/evaluated) * 100}%, Global Best Value: {global_best_value}")
+            print(f"Iteration {it + 1}, miss percentage: {(missed/evaluated) * 100}%, Global Best Value: {list(global_best.keys())[0]}")
 
             #za zapis checkpointa
             '''
             file = open("checkpoints.txt", "a")
-            file.write(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {global_best_value}, Global Best Position: {global_best_position}\n")
+            file.write(f"Iteration {it + 1}/{max_iterations}, Global Best Value: {list(global_best.keys())[0]}, Global Best Position: {global_best[list(global_best.keys())[0]]}\n")
             file.write("###############################################################")
             file.close()
             '''
         it+=1
         #print(global_best_position)
 
-    return global_best_position, global_best_value, global_best_input
+    #return global_best_position, global_best_value, global_best_input
 
 def denormalize(arr):
     for i in range(len(arr)):
+        arr[i] = np.array(arr[i])
         if i == 0:
+            #print(arr[i][0])
             arr[i][0]*=19
             arr[i][1]*=19
             arr[i][2]*=pi
         else:
             arr[i][2]*=pi
+            
+    return arr
+            
+    
         
 try:
     num_particles = 10  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
-    best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=2.5, threshold=-2)
+    #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
+    gpso(num_particles, max_iterations, hours=4, threshold=-2)
     end_time = time.time()
-    print(best_position)
-    denormalize(best_input)
-    print("Best Position:", best_position)
-    print("Best Value:", best_value)
-    print('Best input', best_input)
+    #print(best_position)
+    best_values = list(global_best.keys())
+    best_positions = list()
+    best_inputs = list()
+    for k in best_values:
+        v = global_best[k]
+        #print(v[0])
+        #print(v[1])
+        best_positions.append(v[0])
+        best_inputs.append(v[1])
+    
+    
+    print("Global best values: ", best_values)
+    print("Global best positions: ", best_positions)
+    print("Global best inputs: ", best_inputs)
+    
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
 except KeyboardInterrupt:
     print('stopped')
-    denormalize(global_best_input)
-    print('global_best_position:', global_best_position)
-    print('global_best_value: ', global_best_value)
-    print('global_best_input', global_best_input)
-    #denormalize(global_best_position)
-    #print("Best Position:", best_position)
+    #print(global_best)
+    best_values = list(global_best.keys())
+    #print(best_values)
+    best_positions = list()
+    best_inputs = list()
+    for k in best_values:
+        v = global_best[k]
+        #print(v[0])
+        #print(v[1])
+        best_positions.append(v[0])
+        best_inputs.append(v[1])
+    
+    
+    print("Global best values: ", best_values)
+    print("Global best positions: ", best_positions)
+    print("Global best inputs: ", best_inputs)
