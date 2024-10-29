@@ -171,7 +171,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     
     
     while(time.time()-start_time < 3600*hours):
-        factor = getFactor(time.time(), 3600*hours)
+        factor = getFactor(time.time()-start_time, 3600*hours)
         w*=factor
         c1*=factor
         c2*=factor
