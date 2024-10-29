@@ -97,6 +97,22 @@ global_best = top_five(global_best, value, position, global_best_input)
 #print(global_best_position)
 start_time = time.time()
 
+def getFactor(current_time, total_time):
+    if current_time / total_time < 0.2:
+        return 1
+    if current_time / total_time < 0.4:
+        return 0.25
+    if current_time / total_time < 0.6:
+        return 0.05
+    if current_time / total_time < 0.8:
+        return 0.01
+        
+    return 0.005
+        
+        
+    
+    
+
 def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, threshold=0.05):
     global restart_velocity
     global restart_position
@@ -104,7 +120,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
 
     print('gpso')
 
-    epsilon = 1e-3
+    epsilon = 1e-4
     #stvaranje ptica i populacija
     best_values_per_population = [
         Population(
@@ -152,7 +168,13 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     missed = 0
     #print(global_best_input[0])
     #for iteration in tqdm(range(max_iterations)):
+    
+    
     while(time.time()-start_time < 3600*hours):
+        factor = getFactor(time.time(), 3600*hours)
+        w*=factor
+        c1*=factor
+        c2*=factor
         cnt = 0
         for p in populations: # idi za svaku populaciju
             cntt = 0
@@ -289,7 +311,7 @@ try:
     #dimensions = 27
     max_iterations = 100000
     #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
-    gpso(num_particles, max_iterations, hours=9, threshold=-2)
+    gpso(num_particles, max_iterations, hours=15, threshold=-2)
     end_time = time.time()
     #print(best_position)
     best_values = list(global_best.keys())
