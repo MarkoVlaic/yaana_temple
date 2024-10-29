@@ -417,9 +417,9 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
       LIST_INSERT(&hitpoints, cur_hitpoint, next);
     }
 
-    if(arg != NULL) {
-      add_score_points(ray, ray_normals, hitpoint, &score_point, &score_points, score_polygon);
-    }
+    struct hitpoint **sp = arg == NULL ? NULL : &score_point;
+    add_score_points(ray, ray_normals, hitpoint, sp, &score_points, score_polygon);
+    
 
     if(!hit_map) {
       ray.start = hitpoint;
