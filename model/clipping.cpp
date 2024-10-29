@@ -25,6 +25,10 @@ extern "C" void polygon_free(polygon_t rect) {
   delete (contourklip::Contour *) rect;
 }
 
+extern "C" void polygon_vec_free(polygon_vec_t polygon_vec) {
+  delete (std::vector<contourklip::Contour> *) polygon_vec;
+}
+
 extern "C" void polygon_add_point(polygon_t rect, struct vec point) {
   contourklip::Contour *contour = (contourklip::Contour *)rect;
   contour->push_back({ point.x, point.y });

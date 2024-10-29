@@ -15,6 +15,7 @@ typedef void* polygon_vec_t;
 EXTERNC void clipping_add_wall(struct wall *w);
 EXTERNC polygon_t polygon_new();
 EXTERNC void polygon_free(polygon_t rect_vec);
+EXTERNC void polygon_vec_free(polygon_vec_t polygon_vec);
 EXTERNC void polygon_add_point(polygon_t rect, struct vec point);
 EXTERNC polygon_vec_t polygon_union_rect(polygon_vec_t polygon, polygon_t rect);
 EXTERNC polygon_t polygon_clip_walls(polygon_vec_t polygon);

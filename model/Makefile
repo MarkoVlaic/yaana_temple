@@ -36,7 +36,7 @@ run-benchmark:
 .PHONY: run-fuzzer
 run-fuzzer: export LD_LIBRARY_PATH = $(shell pwd)
 run-fuzzer:
-	./fuzzer
+	valgrind --leak-check=full --show-leak-kinds=all ./fuzzer
 
 test: $(BUILD_DIR) $(LIB_MODEL_OBJECTS) libmodel.so $(BUILD_DIR)/exe/test.o $(HEADERS)
 	$(CC) $(BUILD_DIR)/exe/test.o -L$(shell pwd) $(LDFLAGS) -o test

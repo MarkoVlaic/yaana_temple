@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define ITERATIONS 1e8
+#define ITERATIONS 1e3
 
 #include "model.h"
 

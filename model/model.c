@@ -417,7 +417,9 @@ static bool raytrace(struct object light_obj, struct object mirror_objs[8], stru
       LIST_INSERT(&hitpoints, cur_hitpoint, next);
     }
 
-    add_score_points(ray, ray_normals, hitpoint, &score_point, &score_points, score_polygon);
+    if(arg != NULL) {
+      add_score_points(ray, ray_normals, hitpoint, &score_point, &score_points, score_polygon);
+    }
 
     if(!hit_map) {
       ray.start = hitpoint;
@@ -468,7 +470,7 @@ float score_solution(struct object light, struct object mirror_objs[8], struct m
 
   float area = polygon_area(score_polygon);
 
-  polygon_free(score_polygon);
+  polygon_vec_free(score_polygon);
   
   return area/FREE_SPACE_AREA;
 }
