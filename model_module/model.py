@@ -61,6 +61,20 @@ def get_walls():
     walls.append(wall_a[i])
   return (walls, size)
 
+def get_free_blocks():
+  walls_p = ffi.new('struct wall **')
+  size_p = ffi.new('uint32_t *')
+
+  lib.get_free_blocks(walls_p, size_p)
+
+  size = size_p[0]
+  wall_a = walls_p[0]
+  walls = []
+
+  for i in range(size):
+    walls.append(wall_a[i])
+  return (walls, size)
+
 def evaluate_solution(objs, collect_arg=True):
   light_tuple = tuple((objs[0][i] for i in range(3)))
   light_obj = ffi.new('struct object *')
@@ -83,6 +97,12 @@ def evaluate_solution(objs, collect_arg=True):
 
   score = lib.score_solution(light_obj[0], mirror_objs, mirror_result, arg)
   return ScoreResult(score, light_tuple, mirror_result, arg)
+
+def random_lamp():
+  x_p = ffi.new('float *')
+  y_p = ffi.new('float *')  
+  lib.random_lamp(x_p, y_p)
+  return (x_p[0], y_p[0])
 
 '''
 returns the score and resultant configuration

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-MMD -Wall -O3
+CFLAGS=-MMD -Wall -g
 LDFLAGS = -lm -lmodel -lstdc++
 
 BUILD_DIR=build

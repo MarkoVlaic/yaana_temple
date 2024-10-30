@@ -8,7 +8,6 @@ struct wall {
   struct vec pos;
   float w;
   float h;
-
   
   struct vec verts[4];
   struct segment segments[4];

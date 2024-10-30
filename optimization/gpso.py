@@ -311,7 +311,7 @@ try:
     #dimensions = 27
     max_iterations = 100000
     #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
-    gpso(num_particles, max_iterations, hours=15, threshold=-2)
+    gpso(num_particles, max_iterations, hours=8, threshold=-2)
     end_time = time.time()
     #print(best_position)
     best_values = list(global_best.keys())

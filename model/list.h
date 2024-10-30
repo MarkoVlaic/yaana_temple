@@ -23,4 +23,13 @@
 #define LIST_FOREACH(var, headp, field) \
   for((var) = (headp)->first; (var); (var) = (var)->field.list_next)
 
+#define LIST_GET(headp, field, type, index) ({  \
+  struct type *e = (headp)->first;                \
+  while(index > 0) {                            \
+    e = e->field.list_next;                     \
+    index--;                                    \
+  }                                             \
+  e;                                            \
+})
+
 #define LIST_SIZE(headp) (headp)->cnt

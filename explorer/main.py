@@ -17,6 +17,12 @@ class State:
   def get_walls(self):
     return self.walls
 
+  def set_free_blocks(self, free_blocks):
+    self.free_blocks = free_blocks
+
+  def get_free_blocks(self):
+    return self.free_blocks
+
   def set_light(self, light):
     self.light = light
 
@@ -66,8 +72,10 @@ class Layer:
 #   (13.8,11.5,-0.54)
 # ]
 
+model_init()
+lamp = random_lamp()
 solution = [
-  (5, 5, 0.26),
+  (lamp[0], lamp[1], 0.26),
   (0.5, random(), random() * pi),
   (0.5, random(), random() * pi),
   (0.5, random(), random() * pi),
@@ -155,6 +163,17 @@ def draw_walls(state, canvas):
 
       canvas.create_line(sx, sy, ex, ey, fill='red')
 
+def draw_free_blocks(state, canvas):
+  walls = state.get_free_blocks()
+  for wall in walls:
+    cx = x_to_canvas(wall.pos.x)
+    cy = y_to_canvas(wall.pos.y)
+    cw = w_to_canvas(wall.w)
+    ch = h_to_canvas(wall.h)
+
+    print(f'draw {wall.pos.x} {wall.pos.y} {wall.w} {wall.h} | {cx} {cy} {cw} {ch}')
+    canvas.create_rectangle(cx, cy, cx + cw, cy + ch, fill='blue', outline='black')
+
 def draw_light(state, canvas):
   light = state.get_light()
   light_x = light[0]
@@ -222,6 +241,7 @@ def draw_clipped_polygon(state, canvas):
 def create_layers():
   layers = [
     Layer('walls', draw_walls),
+    Layer('free blocks', draw_free_blocks, False),
     Layer('light', draw_light),
     Layer('mirrors', draw_mirrors),
     Layer('path', draw_path),
@@ -239,8 +259,8 @@ def draw_layers(layers, state, canvas):
       layer.draw_fn(state, canvas)
 
 if __name__ == '__main__':
-  model_init()
   (walls, size) = get_walls()
+  (free_blocks, _) = get_free_blocks()
   score_result = evaluate_solution(solution)
   print(f'got score: {score_result.get_score()}')
   print('api: ', score_solution(solution))
@@ -252,6 +272,7 @@ if __name__ == '__main__':
 
   state = State()
   state.set_walls(walls)
+  state.set_free_blocks(free_blocks)
   state.set_light(solution[0])
   state.set_path(score_result.get_path())
   state.set_mirrors(score_result.get_mirrors())

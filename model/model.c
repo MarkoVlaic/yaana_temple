@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "geom.h"
 #include "model.h"
@@ -41,7 +42,9 @@ char map[MAP_SIDE + 1][MAP_SIDE + 1] = {
   "OOOOOOOOOOOOOOOOOOOO"
 };
 
-static LIST_HEAD(wall_list, wall) walls = LIST_HEAD_INIT();
+LIST_HEAD(block_list, wall);
+static struct block_list walls = LIST_HEAD_INIT();
+static struct block_list free_blocks = LIST_HEAD_INIT();
 
 static void preprocess_walls() {
   struct wall *w;
@@ -61,7 +64,7 @@ static void preprocess_walls() {
   }
 }
 
-void model_init() {
+void group_blocks(struct block_list *list, char symbol) {
   bool processed[MAP_SIDE][MAP_SIDE];
   struct wall *next_wall;
   int i, j, k, w;
@@ -75,19 +78,19 @@ void model_init() {
 
   for(i = 0; i < MAP_SIDE; i++) {
     for(j = 0; j < MAP_SIDE; j++) {
-      if(map[i][j] == 'O' && !processed[i][j]) {
+      if(map[i][j] == symbol && !processed[i][j]) {
         next_wall = (struct wall *) malloc(sizeof(struct wall));
         next_wall->pos.x = j;
         next_wall->pos.y = MAP_SIDE - i; 
         
         k = i;
-        while(k < MAP_SIDE && map[k][j] == 'O' && !processed[k][j]) {
+        while(k < MAP_SIDE && map[k][j] == symbol && !processed[k][j]) {
           k++;
         }
         potential_h = k - i;
 
         k = j;
-        while(k < MAP_SIDE && map[i][k] == 'O' && !processed[i][k]) {
+        while(k < MAP_SIDE && map[i][k] == symbol && !processed[i][k]) {
           k++;
         }
         potential_w = k - j;
@@ -95,10 +98,10 @@ void model_init() {
         if(potential_h > potential_w) {
           next_wall->h = potential_h;
           next_wall->w = 0;
-          for(k = j;k < MAP_SIDE && map[i][k] == 'O' && !processed[i][k];k++) {
+          for(k = j;k < MAP_SIDE && map[i][k] == symbol && !processed[i][k];k++) {
             bool full = true;
             for(w = i; w < i + potential_h; w++) {
-              if(map[w][k] != 'O' || processed[w][k]) {
+              if(map[w][k] != symbol || processed[w][k]) {
                 full = false;
                 break;
               }
@@ -112,10 +115,10 @@ void model_init() {
         } else {
           next_wall->w = potential_w;
           next_wall->h = 0;
-          for(k = i;k < MAP_SIDE && map[k][j] == 'O' && !processed[k][j];k++) {
+          for(k = i;k < MAP_SIDE && map[k][j] == symbol && !processed[k][j];k++) {
             bool full = true;
             for(w = j; w < j + potential_w; w++) {
-              if(map[k][w] != 'O' || processed[k][w]) {
+              if(map[k][w] != symbol || processed[k][w]) {
                 full = false;
                 break;
               }
@@ -134,11 +137,16 @@ void model_init() {
           }
         }
 
-        LIST_INSERT(&walls, next_wall, next_wall);
+        LIST_INSERT(list, next_wall, next_wall);
       }
     }
   }
+}
 
+void model_init() {
+  srand(time(NULL));
+  group_blocks(&walls, 'O');
+  group_blocks(&free_blocks, '.');
   preprocess_walls();
 }
 
@@ -150,6 +158,19 @@ void get_walls(struct wall **wa, uint32_t *cnt) {
   int i = 0;
   
   LIST_FOREACH(w, &walls, next_wall) {
+    memcpy(&((*wa)[i]), w, sizeof(struct wall));
+    i++;
+  }
+}
+
+void get_free_blocks(struct wall **wa, uint32_t *cnt) {
+  uint32_t size = LIST_SIZE(&(free_blocks));
+  *cnt = size;
+  *wa = (struct wall *) malloc(sizeof(struct wall) * size);
+  struct wall *w;
+  int i = 0;
+  
+  LIST_FOREACH(w, &free_blocks, next_wall) {
     memcpy(&((*wa)[i]), w, sizeof(struct wall));
     i++;
   }
@@ -184,6 +205,18 @@ static bool map_segment_intersection(struct segment seg) {
   }
 
   return false;
+}
+
+void random_lamp(float *x, float *y) {
+  uint32_t cnt = LIST_SIZE(&free_blocks);
+  uint32_t index = rand() % cnt;
+  struct wall *block = LIST_GET(&free_blocks, next_wall, wall, index);
+
+  float x_t = ((float) rand()) / RAND_MAX;
+  float y_t = ((float) rand()) / RAND_MAX;
+
+  *x = block->pos.x + block->w * x_t;
+  *y = block->pos.y - block->h * y_t;
 }
 
 static float map_ray_intersection(struct ray ray) {
