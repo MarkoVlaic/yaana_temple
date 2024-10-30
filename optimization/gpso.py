@@ -119,6 +119,8 @@ def getFactor(current_time, total_time):
     
 
 def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, threshold=0.05):
+    
+    global last_change
     global restart_velocity
     global restart_position
     global global_best
@@ -130,6 +132,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     print('gpso')
 
     epsilon = 1e-4
+    last_change = np.zeros(num_particles)
+    
     #stvaranje ptica i populacija
     best_values_per_population = [
         Population(
@@ -203,7 +207,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                 
                 #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
                 if norm(bird.velocity, 2) < epsilon/100:
-                    bird.velocity = np.random.uniform(-0.01,0.01, dimensions) 
+                    bird.velocity = np.random.uniform(-0.05,0.05, dimensions) 
                     restart_velocity +=1
                 else:  
                     bird.velocity = (w * bird.velocity +
@@ -233,6 +237,10 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                 if bird.checkPosition(epsilon):
                     pass
                 elif cntt > 0:
+                    restart_position += 1
+                    bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                    
+                if cntt > 0 and last_change[cnt] > 1000:
                     restart_position += 1
                     bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
 
@@ -272,10 +280,14 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                 best_values_per_population[cnt].best_input = positions
                 
                 #print(best_values_per_population[0].best_position)
+                
+                last_change[cnt] = 0
 
                 for i in range(9): #potrebno za cognitive velocity
                     populations[cnt][i].best_input = (best_values_per_population[cnt].best_input[i])
                     #print()
+            else:
+                last_change[cnt] += 1
             #print(best_values_per_population[0].best_position)
             
             cnt +=1
@@ -326,11 +338,11 @@ def denormalize(arr):
     
         
 try:
-    num_particles = 10  #broj populacija koje stvaramo
+    num_particles = 100  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
     #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
-    gpso(num_particles, max_iterations, hours=4, threshold=0.1)
+    gpso(num_particles, max_iterations, hours=4, threshold=0.05)
     end_time = time.time()
     #print(best_position)
     best_values = list(global_best.keys())
@@ -349,8 +361,9 @@ try:
     print("Global best inputs: ", best_inputs)
     
     print(f"Avg t_x iznosi{t_x/total}, avg t_y iznosi {t_y/total}, avg t_alpha iznosi {t_alpha/total}")
-    
+        
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
+    print(last_change)
 except KeyboardInterrupt:
     print('stopped')
     #print(global_best)
@@ -371,3 +384,5 @@ except KeyboardInterrupt:
     print("Global best inputs: ", best_inputs)
     
     print(f"Avg t_x iznosi{t_x/total}, avg t_y iznosi {t_y/total}, avg t_alpha iznosi {t_alpha/total}")
+    
+    print(last_change)
