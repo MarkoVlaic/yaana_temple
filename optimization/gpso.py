@@ -97,13 +97,18 @@ global_best = top_five(global_best, value, position, global_best_input)
 #print(global_best_position)
 start_time = time.time()
 
+t_x = 0
+t_y = 0
+t_alpha = 0
+total = 0
+
 def getFactor(current_time, total_time):
     if current_time / total_time < 0.2:
-        return 1
+        return 0.5
     if current_time / total_time < 0.4:
-        return 0.25
+        return 0.1
     if current_time / total_time < 0.6:
-        return 0.05
+        return 0.025
     if current_time / total_time < 0.8:
         return 0.01
         
@@ -117,6 +122,10 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     global restart_velocity
     global restart_position
     global global_best
+    global t_x
+    global t_y
+    global t_alpha
+    global total
 
     print('gpso')
 
@@ -135,7 +144,8 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     #for _ in range(num_particles):
     while(len(populations) < num_particles): #radi ovo sve dok ne stvoris num_particles populacija
         population = list() #stvori set, pa u njega dodaj lampu i onda osam ogledala
-        population.append(Bird(np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(1+epsilon, 19-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions)))
+        lamp_position = random_lamp()
+        population.append(Bird(lamp_position[0], lamp_position[1], np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions)))
         while(len(population) < 9):
             bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions))
             population.append(bird)
@@ -157,9 +167,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
             '''
     print('Kreirane populacije')
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
-    c1 = 0.1  # c1, c2 su faktori kojima se množe cognitive i social težine
-    c2 = 0.1 
-    gregarious_factor = 2.5*1e-4  #faktor kojim se množi gregarious težina 
+    c1 = 1  # c1, c2 su faktori kojima se množe cognitive i social težine
+    c2 = 1
+    gregarious_factor = 2.5*1e-3  #faktor kojim se množi gregarious težina 
     #epsilon = 1e-3 # za definiciju epsilon okoline
 
     it = 0
@@ -185,7 +195,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                     bird.normalize_mirror()
                 
                 #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
-                r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
+                r1, r2 = np.random.uniform(-0.5, 0.5), np.random.uniform(-0.5, 0.5)
                 cognitive_velocity = c1 * r1 * np.subtract(bird.best_input, bird.position)
                 #print(global_best_position)
                 social_velocity = c2 * r2 * np.subtract(global_best_input[cntt], bird.position)
@@ -201,22 +211,31 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                                     social_velocity + 
                                     gregarious_velocity)
                 
-                bird.velocity[1] /= 20
+                bird.velocity[1] /= 10
                 #bird.velocity[2] /= 10
                 
-                np.clip(bird.velocity, -0.01, 0.01, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
+                np.clip(bird.velocity, -0.1, 0.1, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
                 '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
                 novi poziciju objekta'''
-
-                if bird.checkPosition(epsilon): 
+                
+                if cntt == 0:
+                    tmp = np.add(bird.position, bird.velocity/100)
+                    bird.setPosition(tmp)
+                else:
                     tmp = np.add(bird.position, bird.velocity)
                     bird.setPosition(tmp)
-                    
-                else:
+                    t_x += bird.velocity[0]
+                    t_y += bird.velocity[1]
+                    t_alpha += bird.velocity[2]
+                    total += 1
+                
+                if bird.checkPosition(epsilon):
+                    pass
+                elif cntt > 0:
                     restart_position += 1
                     bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
-                
+
                 
                 np.clip(bird.position, 0+epsilon, 1-epsilon, out=bird.position)#ograniči poziciju objekta na interval (0,1)
                 #bird.setPosition(tmp)
@@ -307,11 +326,11 @@ def denormalize(arr):
     
         
 try:
-    num_particles = 100  #broj populacija koje stvaramo
+    num_particles = 10  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
     #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
-    gpso(num_particles, max_iterations, hours=8, threshold=-2)
+    gpso(num_particles, max_iterations, hours=4, threshold=0.1)
     end_time = time.time()
     #print(best_position)
     best_values = list(global_best.keys())
@@ -328,6 +347,8 @@ try:
     print("Global best values: ", best_values)
     print("Global best positions: ", best_positions)
     print("Global best inputs: ", best_inputs)
+    
+    print(f"Avg t_x iznosi{t_x/total}, avg t_y iznosi {t_y/total}, avg t_alpha iznosi {t_alpha/total}")
     
     print(f"Vrijeme izvođenja je {end_time-start_time} sekundi")
 except KeyboardInterrupt:
@@ -348,3 +369,5 @@ except KeyboardInterrupt:
     print("Global best values: ", best_values)
     print("Global best positions: ", best_positions)
     print("Global best inputs: ", best_inputs)
+    
+    print(f"Avg t_x iznosi{t_x/total}, avg t_y iznosi {t_y/total}, avg t_alpha iznosi {t_alpha/total}")
