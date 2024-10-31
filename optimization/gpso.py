@@ -113,6 +113,166 @@ def getFactor(current_time, total_time):
         return 0.01
         
     return 0.005
+    
+    
+def lamp_optimization(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, threshold=0.05):
+    global last_change
+    global restart_velocity
+    global restart_position
+    global global_best
+    global t_x
+    global t_y
+    global t_alpha
+    global total
+
+    epsilon = 1e-4
+    last_change = np.zeros(num_particles)
+    
+    #stvaranje ptica i populacija
+    best_values_per_population = [
+        Population(
+            np.array(
+                np.array([np.random.uniform(0+epsilon, 1-epsilon),
+                np.random.uniform(0+epsilon, 1-epsilon),
+                np.random.uniform(0+epsilon, pi-epsilon),
+                np.random.uniform(0+epsilon, 1-epsilon)]) for _ in range(9)
+            ) , 0, []) for _ in range(num_particles)
+        ] 
+    populations = []
+    
+    while(len(populations) < num_particles): #radi ovo sve dok ne stvoris num_particles populacija
+        population = list() #stvori set, pa u njega dodaj lampu i onda osam ogledala
+        lamp_position = random_lamp()
+        population.append(Bird(lamp_position[0], lamp_position[1], np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(0, 0.05, dimensions)))
+        while(len(population) < 9):
+            bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(0, 0.05, dimensions))
+            population.append(bird)
+        
+        population = list(population)
+        positions = list(g.position for g in population) #kreiraj listu pozicija od kreirane liste objekata
+
+        tmp_res = score_solution(positions) #provjeri score
+        
+        if tmp_res[0] > threshold: #ako je veci od thresholda, dodaj tu populaciju u listu populacija
+            populations.append(population)
+            
+    print('Kreirane populacije')
+    w = 1 # težina kojom se množi trenutni velocity za svaki objekt
+    c1 = 1  # c1, c2 su faktori kojima se množe cognitive i social težine
+    c2 = 1
+    gregarious_factor = 2.5*1e-3  #faktor kojim se množi gregarious težina 
+    #epsilon = 1e-3 # za definiciju epsilon okoline
+    
+    it = 0
+
+    evaluated = 0
+    missed = 0
+    
+    
+    while(time.time()-start_time < 3600*hours):
+        factor = getFactor(time.time()-start_time, 3600*hours)
+        w*=factor
+        c1*=factor
+        c2*=factor
+        cnt = 0
+        for p in populations: # idi za svaku populaciju
+            cntt = 0
+            for bird in p: # idi za svaki objekt u populaciji
+                if cntt == 0: #ako nije prva iteracija, lampu normaliziraj kao i prije, a kod ogledala normaliziraj samo kut
+                    bird.normalize_lamp()
+                    #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
+                    r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
+                    cognitive_velocity = c1 * r1 * np.subtract(bird.best_input, bird.position)
+                    #print(global_best_position)
+                    #social_velocity = c2 * r2 * np.subtract(global_best_input[cntt], bird.position)
+                    gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
+                    
+                    if norm(bird.velocity, 2) < epsilon/100:
+                        bird.velocity = np.random.uniform(0,0.15, dimensions) 
+                        restart_velocity +=1
+                    else:  
+                        bird.velocity = (w * bird.velocity +
+                                        cognitive_velocity +
+                                        gregarious_velocity)
+                    
+                    bird.velocity[1] /= 10
+                
+                    np.clip(bird.velocity, 0, 0.15, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
+
+                    '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
+                    novi poziciju objekta'''
+                    
+                    if cntt == 0:
+                        tmp = np.add(bird.position, bird.velocity/100)
+                        bird.setPosition(tmp)
+                        
+                    if bird.checkPosition(epsilon):
+                        pass
+                    elif cntt > 0:
+                        restart_position += 1
+                        bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                        
+                    if cntt > 0 and last_change[cnt] > 1000:
+                        restart_position += 1
+                        bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+
+                    
+                    np.clip(bird.position, 0+epsilon, 1-epsilon, out=bird.position)#ograniči poziciju objekta na interval (0,1)
+                    #bird.setPosition(tmp)
+                    
+                    if cntt == 0: #ako je objekt lampa, denormaliziraj kao lampu, inace denormaliziraj kao ogledalo
+                        bird.denormalize_lamp() #denormaliziraj objekt
+                    cntt+=1
+
+                '''linija ispod stvara listu pozicija objekata koje ćemo predati funkciji score_solution, dogovorili smo se da ne 
+                predajemo objekte klase nego pozicije
+                '''
+            positions = list(g.position for g in p)
+            
+            tmp_res = score_solution(positions)
+            current_value = tmp_res[0] #izračunaj score
+            evaluated += 1
+            if current_value == -1:
+                missed += 1
+            if math.isnan(current_value):
+                print('nan: ', positions)
+                print(f'score {current_value}')
+
+            '''provjeri je li score za populaciju bolji od trenutnog najboljeg, ako je postavi tu vrijednost kao najbolju za tu
+            populaciju i postavi tu poziciju objekata kao novu najbolju poziciju objekata'''
+
+            if current_value > best_values_per_population[cnt].best_value:
+                best_values_per_population[cnt].best_value = current_value
+                best_values_per_population[cnt].best_position = tmp_res[1]
+                best_values_per_population[cnt].best_input = positions
+                
+                #print(best_values_per_population[0].best_position)
+                
+                last_change[cnt] = 0
+
+                for i in range(9): #potrebno za cognitive velocity
+                    populations[cnt][i].best_input = (best_values_per_population[cnt].best_input[i])
+                    #print()
+            else:
+                last_change[cnt] += 1
+            #print(best_values_per_population[0].best_position)
+            
+            cnt +=1
+            
+        current_global_best = max(best_values_per_population, key=lambda p: p.best_value) #vraća objekt koji ima najbolju vrijednost scorea od svih populacija
+        #print(current_global_best.best_value, current_global_best.best_position)
+        '''provjerava je li trenutno izračunati current_global_best bolji od dosad najboljeg scorea, 
+        ako je, postavi tu vrijednost kao najbolju i postavi te pozicije objekata kao najbolje'''
+        global_best = top_five(global_best, current_global_best.best_value, current_global_best.best_position, current_global_best.best_input)
+        
+        
+        if it%checkpoint == 0:
+            print(f"Iteration {it + 1}, miss percentage: {(missed/evaluated) * 100}%, Global Best Value: {list(global_best.keys())[0]}")
+        it+=1
+                
+
+    return list(p.best_position for p in best_values_per_population)
+    
         
         
     
@@ -128,7 +288,9 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
     global t_y
     global t_alpha
     global total
-
+    
+    lamps = lamp_optimization(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=0.7, threshold=0.05)
+    
     print('gpso')
 
     epsilon = 1e-4
@@ -146,12 +308,12 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
         ] 
     populations = []
     #for _ in range(num_particles):
+    pos=0
     while(len(populations) < num_particles): #radi ovo sve dok ne stvoris num_particles populacija
         population = list() #stvori set, pa u njega dodaj lampu i onda osam ogledala
-        lamp_position = random_lamp()
-        population.append(Bird(lamp_position[0], lamp_position[1], np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions)))
+        population.append(Bird(lamps[pos][0][0], lamps[pos][0][1], lamps[pos][0][1], np.random.uniform(-0.01, 0.01, dimensions)))
         while(len(population) < 9):
-            bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(-0.01, 0.01, dimensions))
+            bird = Bird(np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, 1-epsilon), np.random.uniform(0+epsilon, pi-epsilon), np.random.uniform(0, 0.05, dimensions))
             population.append(bird)
         
         population = list(population)
@@ -169,6 +331,7 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                 global_best_position = tmp_res[1]
                 global_best_input = positions
             '''
+            pos += 1
     print('Kreirane populacije')
     w = 1 # težina kojom se množi trenutni velocity za svaki objekt
     c1 = 1  # c1, c2 su faktori kojima se množe cognitive i social težine
@@ -198,55 +361,55 @@ def gpso(num_particles, max_iterations, dimensions=3, checkpoint=1000, hours=6, 
                 else:
                     bird.normalize_mirror()
                 
-                #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
-                r1, r2 = np.random.uniform(-0.5, 0.5), np.random.uniform(-0.5, 0.5)
-                cognitive_velocity = c1 * r1 * np.subtract(bird.best_input, bird.position)
-                #print(global_best_position)
-                social_velocity = c2 * r2 * np.subtract(global_best_input[cntt], bird.position)
-                gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
-                
-                #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
-                if norm(bird.velocity, 2) < epsilon/100:
-                    bird.velocity = np.random.uniform(-0.05,0.05, dimensions) 
-                    restart_velocity +=1
-                else:  
-                    bird.velocity = (w * bird.velocity +
-                                    cognitive_velocity +
-                                    social_velocity + 
-                                    gregarious_velocity)
-                
-                bird.velocity[1] /= 10
-                #bird.velocity[2] /= 10
-                
-                np.clip(bird.velocity, -0.1, 0.1, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
-
-                '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
-                novi poziciju objekta'''
-                
-                if cntt == 0:
-                    tmp = np.add(bird.position, bird.velocity/100)
-                    bird.setPosition(tmp)
-                else:
-                    tmp = np.add(bird.position, bird.velocity)
-                    bird.setPosition(tmp)
-                    t_x += bird.velocity[0]
-                    t_y += bird.velocity[1]
-                    t_alpha += bird.velocity[2]
-                    total += 1
-                
-                if bird.checkPosition(epsilon):
-                    pass
-                elif cntt > 0:
-                    restart_position += 1
-                    bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                    #r1 i r2 su faktori koji unose nasumičnost u odabir težina, sljedeće linije izračunavaju težine
+                    r1, r2 = np.random.uniform(0, 0.5), np.random.uniform(0, 0.5)
+                    cognitive_velocity = c1 * r1 * np.subtract(bird.best_input, bird.position)
+                    #print(global_best_position)
+                    social_velocity = c2 * r2 * np.subtract(global_best_input[cntt], bird.position)
+                    gregarious_velocity = gregarious_factor * np.subtract(np.mean([g.position for g in p], axis=0), bird.position)
                     
-                if cntt > 0 and last_change[cnt] > 1000:
-                    restart_position += 1
-                    bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                    #provjeri je li velocity u epsilon okolini (0,0,0), ako je generiraj ga ponovno, ako nije izračunaj ga po formuli dolje
+                    if norm(bird.velocity, 2) < epsilon/100:
+                        bird.velocity = np.random.uniform(0,0.15, dimensions) 
+                        restart_velocity +=1
+                    else:  
+                        bird.velocity = (w * bird.velocity +
+                                        cognitive_velocity +
+                                        social_velocity + 
+                                        gregarious_velocity)
+                    
+                    bird.velocity[1] /= 10
+                    #bird.velocity[2] /= 10
+                    
+                    np.clip(bird.velocity, 0, 0.2, out=bird.velocity) #ograniči velocity na interval (-0.1, 0.1)
 
-                
-                np.clip(bird.position, 0+epsilon, 1-epsilon, out=bird.position)#ograniči poziciju objekta na interval (0,1)
-                #bird.setPosition(tmp)
+                    '''opis funkcije checkPosition gore u klasi, ako vrati true, dodaj velocity na trenutnu poziciju objekta, inače generiraj
+                    novi poziciju objekta'''
+                    
+                    if cntt == 0:
+                        tmp = np.add(bird.position, bird.velocity/100)
+                        bird.setPosition(tmp)
+                    else:
+                        tmp = np.add(bird.position, bird.velocity)
+                        bird.setPosition(tmp)
+                        t_x += bird.velocity[0]
+                        t_y += bird.velocity[1]
+                        t_alpha += bird.velocity[2]
+                        total += 1
+                    
+                    if bird.checkPosition(epsilon):
+                        pass
+                    elif cntt > 0:
+                        restart_position += 1
+                        bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                        
+                    if cntt > 0 and last_change[cnt] > 1000:
+                        restart_position += 1
+                        bird.setPosition(np.random.uniform(0+epsilon, 1-epsilon, dimensions))
+                        last_change[cnt] = 0
+                        
+                    np.clip(bird.position, 0+epsilon, 1-epsilon, out=bird.position)#ograniči poziciju objekta na interval (0,1)
+                    #bird.setPosition(tmp)
                 
                 if cntt == 0: #ako je objekt lampa, denormaliziraj kao lampu, inace denormaliziraj kao ogledalo
                     bird.denormalize_lamp() #denormaliziraj objekt
@@ -338,11 +501,11 @@ def denormalize(arr):
     
         
 try:
-    num_particles = 100  #broj populacija koje stvaramo
+    num_particles = 10  #broj populacija koje stvaramo
     #dimensions = 27
     max_iterations = 100000
     #best_position, best_value, best_input = gpso(num_particles, max_iterations, hours=7, threshold=-2)
-    gpso(num_particles, max_iterations, hours=4, threshold=0.05)
+    gpso(num_particles, max_iterations, hours=3, threshold=0.1)
     end_time = time.time()
     #print(best_position)
     best_values = list(global_best.keys())
